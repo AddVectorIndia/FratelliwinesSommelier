@@ -1,0 +1,11 @@
+# This repo is public and is meant to hold only the deployable
+# Digital Sommelier site. The full project (Python CLI, source Excel
+# catalogue, original kiosk assets) lives in a local-only workspace
+# and must never be committed here.
+digital_sommelier/
+resources/
+main.py
+requirements.txt
+.venv/
+__pycache__/
+*.pyc
