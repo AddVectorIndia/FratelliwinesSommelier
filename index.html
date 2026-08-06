@@ -978,7 +978,7 @@ const traitAnswered = { body: false, fruit: false, sweetness: false, oak: false 
    no-ops if blocked (ad-blocker, offline, rate limit) so it can
    never break the funnel.
 ════════════════════════════════════════════════════════════════ */
-let visitor = { city: null, region: null, country: null };
+let visitor = { city: null, region: null, country: null, ip: null };
 
 async function detectVisitorLocation() {
   try {
@@ -988,7 +988,7 @@ async function detectVisitorLocation() {
     clearTimeout(timer);
     if (!res.ok) return;
     const data = await res.json();
-    visitor = { city: data.city || null, region: data.region || null, country: data.country_name || null };
+    visitor = { city: data.city || null, region: data.region || null, country: data.country_name || null, ip: data.ip || null };
     if (visitor.city) {
       const badge = document.getElementById('location-badge');
       document.getElementById('location-text').textContent =
@@ -1024,7 +1024,60 @@ function saveLead(lead) {
   const existing = JSON.parse(localStorage.getItem(key) || '[]');
   existing.push(lead);
   localStorage.setItem(key, JSON.stringify(existing));
-  console.info('[lead captured — wire this to your CRM / email service]', lead);
+  console.info('[lead captured locally as a backup]', lead);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FRATELLI ENQUIRY API — fired on signup submit, alongside (not
+   instead of) the local backup + Pixel Lead event above. Best-effort:
+   a network/CORS failure here must never block the on-screen success
+   state, so this is fire-and-forget with its own try/catch.
+════════════════════════════════════════════════════════════════ */
+const ENQUIRY_ENDPOINT = 'https://data.fratelliwines.in/dataset/FratelliEnquiryDetails';
+
+// Guest input is loose ("98765 43210", "9876543210", …); the API wants
+// E.164-ish ("+919876543210"). Assumes an Indian number when no
+// country code is given, since that's this funnel's audience.
+function formatPhoneForEnquiry(mobile) {
+  if (!mobile) return '';
+  const digits = mobile.replace(/[^\d+]/g, '');
+  if (digits.startsWith('+')) return digits;
+  return '+91' + digits.replace(/^0+/, '');
+}
+
+// "YYYY-MM-DD HH:MM:SS" in IST, regardless of the guest's own timezone.
+function formatISTTimestamp(date) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+  }).formatToParts(date);
+  const get = (t) => parts.find(p => p.type === t).value;
+  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}:${get('second')}`;
+}
+
+async function submitFratelliEnquiry({ name, email, mobile }) {
+  const payload = [{
+    Name: name || '',
+    Phone: formatPhoneForEnquiry(mobile),
+    EmailID: email || '',
+    FrequentFlyerNo: '',
+    SourceIP: visitor.ip || '',
+    SourceTime: formatISTTimestamp(new Date()),
+    BusinessUnit: 'Sommelier'
+  }];
+  try {
+    const res = await fetch(ENQUIRY_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    console.info('[Fratelli enquiry API]', res.status, res.ok ? 'submitted' : 'non-OK response', payload[0]);
+  } catch (e) {
+    // Most likely CORS (browser blocks the request before any response
+    // arrives) or the guest is offline — either way, don't disrupt the funnel.
+    console.warn('[Fratelli enquiry API] request failed — signup still recorded locally', e);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1293,6 +1346,7 @@ document.getElementById('signup-form').addEventListener('submit', function (e) {
     submittedAt: new Date().toISOString()
   };
   saveLead(lead);
+  submitFratelliEnquiry({ name, email, mobile });
   trackStandard('Lead', { content_name: lastResults[0] ? lastResults[0].wine.name : null, value: 0, currency: 'INR' });
 
   document.getElementById('signup-content').innerHTML = `
