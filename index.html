@@ -9,31 +9,52 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- Non-render-blocking font load: the stylesheet fetches in the
+     background (media="print" doesn't match screen, so it can't block
+     first paint) and swaps to media="all" the instant it's ready. The
+     <noscript> fallback covers the no-JS case. Saves ~2.5s of
+     render-blocking time — text still renders immediately in the
+     fallback serif/sans-serif and re-flows once the real font lands
+     (font-display=swap already covers that hand-off cleanly). -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Raleway:wght@300;400;500;600&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet"></noscript>
 
 <!-- ═══════════════════════════════════════════════════════════════
      META / FACEBOOK PIXEL — placeholder.
      Replace YOUR_PIXEL_ID with the real Pixel ID before going live
      (Meta Events Manager → your Pixel → Settings). Everything below
-     is the standard Meta boilerplate; the funnel-specific events
-     (QuizStarted, QuizCompleted, Lead, …) are fired from the
-     `track()` / `trackStandard()` helpers near the bottom of this
-     file, guarded so a blocked/missing pixel never breaks the page.
+     is the standard Meta boilerplate, EXCEPT it's gated behind a
+     real-ID check: fbevents.js is a ~400KB third-party script, so
+     there's no reason to make every visitor download and parse it
+     while the ID is still this placeholder — it wouldn't track
+     anything anyway. It starts loading itself automatically the
+     moment you swap in a real ID below, no other change needed.
+     The funnel-specific events (QuizStarted, QuizCompleted, Lead, …)
+     are fired from the `track()` / `trackStandard()` helpers near
+     the bottom of this file, guarded so a blocked/missing pixel
+     never breaks the page either way.
 ════════════════════════════════════════════════════════════════ -->
 <script>
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-try {
-  fbq('init', 'YOUR_PIXEL_ID');
-  fbq('track', 'PageView');
-} catch (e) { /* pixel script blocked (ad-blocker / offline) — funnel still works */ }
+var META_PIXEL_ID = 'YOUR_PIXEL_ID'; // ← replace here AND in the <noscript> tag just below
+if (META_PIXEL_ID !== 'YOUR_PIXEL_ID') {
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  try {
+    fbq('init', META_PIXEL_ID);
+    fbq('track', 'PageView');
+  } catch (e) { /* pixel script blocked (ad-blocker / offline) — funnel still works */ }
+}
 </script>
+<!-- Only matters for JS-disabled browsers, and it's a 1x1 image request
+     (not the 400KB fbevents.js above), so it isn't worth gating the
+     same way — just keep this ID in sync with META_PIXEL_ID above. -->
 <noscript><img height="1" width="1" style="display:none"
   src="https://www.facebook.com/tr?id=YOUR_PIXEL_ID&ev=PageView&noscript=1" alt=""
 /></noscript>
@@ -1423,7 +1444,7 @@ function restartQuiz() {
 
 lazyLoadBg(document.getElementById('s-landing'));
 detectVisitorLocation();
-typewrite('tw-landing', 'Your perfect glass, poured in four questions.', 30, () => {
+typewrite('tw-landing', 'Your perfect glass, a few questions away.', 30, () => {
   document.getElementById('landing-sub').style.opacity = '1';
   document.getElementById('landing-cta').style.opacity = '1';
 });

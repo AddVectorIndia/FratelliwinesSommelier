@@ -93,7 +93,30 @@ friction low). Client-side validation only.
 ## Before going live
 
 **Meta Pixel** — in `<head>`, replace `YOUR_PIXEL_ID` (two occurrences:
-the `fbq('init', …)` call and the `<noscript>` fallback `<img>` src)
-with the real Pixel ID from Meta Events Manager. Until then you'll see
-a harmless `[Meta Pixel] - Invalid PixelID` console warning — the rest
-of the funnel is unaffected.
+the `META_PIXEL_ID` variable and the `<noscript>` fallback `<img>` src)
+with the real Pixel ID from Meta Events Manager. Until then, the ~400KB
+`fbevents.js` script is skipped entirely (see Performance below) rather
+than loading and silently failing to track anything — swapping in a
+real ID is the only change needed to start it loading.
+
+## Performance
+
+Fixed after a Lighthouse pass flagged these:
+
+- **Render-blocking requests (~2.5s)** — the Google Fonts stylesheet
+  `<link>` used to block first paint. Now loaded via the standard
+  `media="print" onload="this.media='all'"` swap trick (+ `<noscript>`
+  fallback), so text paints immediately in the fallback font and swaps
+  in once the webfont's ready — `font-display: swap` already handled
+  that hand-off cleanly.
+- **Legacy JavaScript (13 KiB)** — this was third-party code inside
+  Meta's `fbevents.js`, not ours; fixed as a side effect of gating the
+  Pixel behind a real ID above, since that whole 400KB script no longer
+  loads until it's actually configured.
+- **Cache lifetimes (296 KiB)** — GitHub Pages serves everything with a
+  fixed `Cache-Control: max-age=600` (10 min); it doesn't support
+  custom response headers or a `_headers`-style config, so this isn't
+  fixable while hosted here. Not urgent for a low-traffic marketing
+  site, but if it matters later: front the domain with Cloudflare (own
+  cache rules) or serve `img/` through a CDN that fronts this repo
+  (e.g. jsDelivr) instead of directly from Pages.
