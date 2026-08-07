@@ -168,14 +168,15 @@ most likely to quietly break) the Aroma/Flavour Skip button rendering
 pixel-identical (padding, font-size, layout direction, colors) to
 every other `.choice-btn` in the quiz.
 
-**Light-theme card surfaces are more opaque than dark theme's**
-(`--surface-1/1-end/2` are a near-solid cream, ~88–92% alpha, vs. dark
-theme's near-transparent ~3–5%) — a fully-opaque dark card still reads
-as "part of the photo" against a dark backdrop, but a fully-opaque
-light card against the same dark-ish source photos would look like a
-flat paper cutout, so dark theme leans transparent; light theme needs
-enough coverage that card text stays legible over whatever's directly
-behind it.
+**Card surfaces are deliberately translucent in both themes**
+(`--surface-1/1-end/2` sit around 2–5% alpha — a dark tint in light
+theme, a light tint in dark theme) — a solid card would read as a flat
+paper cutout against the photo behind it; the barely-there tint is
+what gives it the "glass over the photo" look both themes share. This
+briefly went to ~88–92% opaque in light theme as a workaround for the
+dark-band bug below, before the actual scroll bug was found and fixed
+at the source — it's back to matching dark theme's translucency now
+that the real cause is gone.
 
 **Aroma/Flavour tag chips (`.tag-chip`) use the exact same tokens as
 `.choice-btn`** (background, border, border-radius, hover/selected
@@ -208,6 +209,21 @@ showed up as a stark near-black horizontal band behind the third
 recommendation card. Keeping the scroll on `.content` instead means
 the background/overlay always stay pinned behind the full 900px
 viewport no matter how far the content itself has scrolled.
+
+## Selected-button spacing (`.choice-btn`/`.tag-chip`)
+
+Both `.choice-btn.selected` and `.tag-chip.selected` scale up
+(`transform: scale(1.03)`) on selection. `transform` doesn't affect
+grid/flex layout, so the scaled-up box visually grows past its own
+cell into the gap — and since neither had a `z-index`, a plain sibling
+that comes *after* it in the DOM (e.g. the next grid cell in the same
+row) still painted on top of that overflow by source order, making the
+selected button appear to dip *behind* its neighbor right at the
+moment it's picked. Fixed two ways: `.choice-grid`'s gap went from
+`0.7rem` → `0.85rem` and `.tag-grid`'s from `0.5rem` → `0.65rem` for
+more breathing room, and both `.selected` rules now set
+`position: relative; z-index: 2` so the selected item always paints
+above every sibling regardless of geometry or viewport width.
 
 ## Signup fields
 
