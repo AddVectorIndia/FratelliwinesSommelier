@@ -13,10 +13,10 @@ intentionally not published here.
 
 Landing page → 6-question quiz (wine type → occasion → food pairing →
 aroma → flavour → budget) → 3 ranked recommendations, each shown as a
-star rating (out of 5) with a match-score breakdown → optional email
-signup → thank-you screen. Dark wine/gold brand styling, animated
-screen transitions, Ken Burns backgrounds, typewriter copy, animated
-count-up stars and score bars.
+card with a large rank numeral (I/II/III) and a per-question score-bar
+breakdown → optional email signup → thank-you screen. Dark wine/gold
+brand styling, animated screen transitions, Ken Burns backgrounds,
+typewriter copy, animated score bars.
 
 Occasion, food and aroma are all **skippable and unscored** — they
 shape the results-screen copy ("Curated for your Hosting evening,
@@ -25,8 +25,10 @@ captured lead, but never affect ranking.
 
 ## Recommendation scoring
 
-Every wine is scored 0–100% as a weighted blend, then shown to the
-guest as a **star rating out of 5** (100% = 5.0 stars):
+Every wine is scored 0–100% as a weighted blend. That score isn't
+shown to the guest directly (no star rating or match percentage on the
+card) — it's used only to rank and order the three recommendations,
+each of which still gets a full per-question score-bar breakdown:
 
 | Weight | Signal | How it's matched |
 |---|---|---|
@@ -52,9 +54,20 @@ just not tapping a note before hitting "Skip →").
 
 The exact formulas (`categoryMatch`, `priceMatch`, `flavourTagMatch`,
 `getAvailableTags`, `scoreWine`) are in the `<script>` block in
-`index.html` — search for "SCORING". The star display itself is just a
-presentation layer over the same 0–100 score (`score.pct / 20`); it
-doesn't change how wines are ranked.
+`index.html` — search for "SCORING". `score.pct` (0–100) only ever
+drives sort order and the score-bar fills now — there's no visible
+rating number or star display on the card at all.
+
+### Card header
+
+`.rec-top` is just the wine name/type/price on the left and the rank
+numeral (`.rec-rank` — "I"/"II"/"III") on the right, `justify-content:
+space-between`. The numeral used to sit small next to the wine name,
+paired with a star rating + match-percentage on the right; both the
+stars and the percentage are gone now (`score.pct` still ranks the
+wines, it's just not shown), so the numeral moved to that now-empty
+right side and grew from `0.75rem` to `2.1rem` to still read as a
+deliberate design element on its own rather than an afterthought.
 
 ### Results breakdown bars
 
