@@ -103,8 +103,8 @@ a { color: var(--gold-light); }
 
 ::selection { background: var(--gold); color: var(--wine-black); }
 
-/* Subtle scrollbar so the palate screen (which can scroll on small
-   phones) doesn't look jarring. */
+/* Subtle scrollbar for screens that scroll on small phones (tag
+   pickers, results) so it doesn't look jarring. */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
 
@@ -356,47 +356,8 @@ a { color: var(--gold-light); }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   PALATE TRAITS (ring selectors)
-════════════════════════════════════════════════════════════════ */
-.trait-block { width: 100%; margin-top: 1.5rem; text-align: left; }
-.trait-head { display: flex; align-items: baseline; justify-content: space-between; }
-.trait-label {
-  font-family: var(--font-display);
-  font-size: 1.05rem; color: var(--gold-light); font-style: italic;
-}
-.trait-skip {
-  background: none; border: none;
-  font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--cream-muted); text-decoration: underline; text-underline-offset: 2px;
-}
-.trait-skip.active { color: var(--gold); }
-.trait-desc { font-size: 0.74rem; color: var(--cream-muted); margin-top: 0.15rem; }
-
-.trait-options { display: flex; gap: 0.5rem; margin-top: 0.65rem; flex-wrap: wrap; }
-.trait-pill {
-  flex: 1 1 0;
-  min-width: 64px;
-  background: rgba(244,234,216,0.04);
-  border: 1px solid rgba(244,234,216,0.14);
-  color: var(--cream);
-  border-radius: 999px;
-  padding: 0.55rem 0.4rem;
-  font-size: 0.72rem;
-  text-align: center;
-  transition: border-color .2s, background .2s, transform .15s;
-}
-.trait-pill:hover { border-color: var(--gold-dim); }
-.trait-pill.selected {
-  border-color: var(--gold);
-  background: var(--gold);
-  color: var(--wine-black);
-  font-weight: 600;
-  transform: scale(1.04);
-}
-
-/* ═══════════════════════════════════════════════════════════════
    TAG GRID (Aroma / Flavour — multi-select chips, sized to their
-   own text rather than stretched evenly like .trait-pill, since the
+   own text rather than stretched evenly, since the
    list length varies with the chosen wine type)
 ════════════════════════════════════════════════════════════════ */
 .tag-grid {
@@ -476,11 +437,29 @@ a { color: var(--gold-light); }
 .rec-meta { font-size: 0.72rem; color: var(--cream-muted); margin-top: 0.2rem; }
 
 .rec-match { text-align: right; flex-shrink: 0; }
-.rec-match .num {
-  font-family: var(--font-display); font-size: 1.6rem; color: var(--gold-light);
+.rec-match .lbl { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cream-muted); margin-top: 0.3rem; }
+
+/* 5-star rating — a muted "empty" row with a gold "filled" row
+   layered on top, clipped to width via animated %, so the fill can
+   land at any fraction (e.g. 4.3/5) rather than only whole/half stars. */
+.stars {
+  position: relative;
+  display: inline-block;
+  font-size: 1.15rem;
   line-height: 1;
+  letter-spacing: 0.1rem;
 }
-.rec-match .lbl { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cream-muted); }
+.stars-bg { color: rgba(244,234,216,0.15); white-space: nowrap; }
+.stars-fg {
+  position: absolute; top: 0; left: 0;
+  width: 0%; overflow: hidden; white-space: nowrap;
+  color: var(--gold-light);
+  transition: width 1.1s var(--ease);
+}
+.rec-match .num {
+  font-family: var(--font-display); font-size: 1.3rem; color: var(--gold-light);
+  line-height: 1; margin-top: 0.3rem;
+}
 
 .rec-notes { font-size: 0.8rem; color: var(--cream-dim); margin-top: 0.6rem; }
 .rec-notes b { color: var(--gold-light); font-weight: 500; }
@@ -570,7 +549,7 @@ a { color: var(--gold-light); }
 
 @media (max-width: 380px) {
   .choice-btn { font-size: 0.76rem; padding: 0.8rem 0.5rem; }
-  .trait-pill { font-size: 0.66rem; }
+  .tag-chip { font-size: 0.7rem; padding: 0.45rem 0.8rem; }
 }
 </style>
 </head>
@@ -584,7 +563,6 @@ a { color: var(--gold-light); }
   <span class="dot" data-step="4"></span>
   <span class="dot" data-step="5"></span>
   <span class="dot" data-step="6"></span>
-  <span class="dot" data-step="7"></span>
 </div>
 
 <div id="app">
@@ -615,7 +593,7 @@ a { color: var(--gold-light); }
     <div class="parallax-bg" data-bg="img/cellar.jpg" id="bg-wine"></div>
     <div class="screen-overlay"></div>
     <div class="content">
-      <div class="eyebrow">Step 1 of 7</div>
+      <div class="eyebrow">Step 1 of 6</div>
       <p class="headline" id="tw-wine"></p>
       <div class="choice-grid" id="wine-choices">
         <button class="choice-btn" data-val="red"><span class="icon">🍷</span>Red</button>
@@ -633,7 +611,7 @@ a { color: var(--gold-light); }
     <div class="parallax-bg" data-bg="img/sculpture.jpg" id="bg-occasion"></div>
     <div class="screen-overlay"></div>
     <div class="content">
-      <div class="eyebrow">Step 2 of 7</div>
+      <div class="eyebrow">Step 2 of 6</div>
       <p class="headline" id="tw-occasion"></p>
       <div class="choice-grid" id="occasion-choices">
         <button class="choice-btn" data-val="celebration"><span class="icon">🥳</span>Celebration</button>
@@ -652,7 +630,7 @@ a { color: var(--gold-light); }
     <div class="parallax-bg" data-bg="img/harvest.jpg" id="bg-food"></div>
     <div class="screen-overlay"></div>
     <div class="content">
-      <div class="eyebrow">Step 3 of 7</div>
+      <div class="eyebrow">Step 3 of 6</div>
       <p class="headline" id="tw-food"></p>
       <div class="choice-grid" id="food-choices">
         <button class="choice-btn" data-val="indian"><span class="icon">🍛</span>Indian</button>
@@ -671,7 +649,7 @@ a { color: var(--gold-light); }
     <div class="parallax-bg" data-bg="img/grapes.jpg" id="bg-aroma"></div>
     <div class="screen-overlay"></div>
     <div class="content" style="max-width:480px">
-      <div class="eyebrow">Step 4 of 7</div>
+      <div class="eyebrow">Step 4 of 6</div>
       <p class="headline" id="tw-aroma"></p>
       <p class="subtext">Tap as many as you like — this just colours your results, it won't affect ranking.</p>
       <div class="tag-grid" id="aroma-tags"></div>
@@ -687,81 +665,11 @@ a { color: var(--gold-light); }
     <div class="parallax-bg" data-bg="img/sculpture.jpg" id="bg-flavour"></div>
     <div class="screen-overlay"></div>
     <div class="content" style="max-width:480px">
-      <div class="eyebrow">Step 5 of 7</div>
+      <div class="eyebrow">Step 5 of 6</div>
       <p class="headline" id="tw-flavour"></p>
       <p class="subtext">Tap the flavours you're craving — this is the "flavour" quarter of your match score.</p>
       <div class="tag-grid" id="flavour-tags"></div>
       <div style="margin-top:1.7rem" id="flavour-continue">
-        <button class="btn-primary" onclick="goTo('s-palate')">Continue →</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ══════════════════════ STYLE (Body/Fruit/Oak/Sweetness scale — personalization
-       only, unscored; kept for guests who like the structural framing, but the
-       Flavour screen above is what actually earns the 25% "flavour" weight) ══════════════════════ -->
-  <section class="screen" id="s-palate">
-    <div class="parallax-bg" data-bg="img/vineyard.jpg" id="bg-palate"></div>
-    <div class="screen-overlay"></div>
-    <div class="content" style="max-width:480px">
-      <div class="eyebrow">Step 6 of 7</div>
-      <p class="headline" id="tw-palate"></p>
-      <p class="subtext">A bit more about your style — tap what you enjoy, or skip any you're unsure of.</p>
-
-      <div class="trait-block" data-trait-block="body">
-        <div class="trait-head">
-          <span class="trait-label">Body</span>
-          <button class="trait-skip" data-skip="body">Skip</button>
-        </div>
-        <div class="trait-desc">How full and weighty do you like your wine?</div>
-        <div class="trait-options" data-trait="body">
-          <button class="trait-pill" data-val="low">Light</button>
-          <button class="trait-pill" data-val="medium">Medium</button>
-          <button class="trait-pill" data-val="high">Full</button>
-        </div>
-      </div>
-
-      <div class="trait-block" data-trait-block="fruit">
-        <div class="trait-head">
-          <span class="trait-label">Fruit</span>
-          <button class="trait-skip" data-skip="fruit">Skip</button>
-        </div>
-        <div class="trait-desc">How fruit-forward should it taste?</div>
-        <div class="trait-options" data-trait="fruit">
-          <button class="trait-pill" data-val="low">Subtle</button>
-          <button class="trait-pill" data-val="medium">Medium</button>
-          <button class="trait-pill" data-val="high">Fruit-forward</button>
-        </div>
-      </div>
-
-      <div class="trait-block" data-trait-block="sweetness">
-        <div class="trait-head">
-          <span class="trait-label">Sweetness</span>
-          <button class="trait-skip" data-skip="sweetness">Skip</button>
-        </div>
-        <div class="trait-desc">From bone dry to lusciously sweet.</div>
-        <div class="trait-options" data-trait="sweetness">
-          <button class="trait-pill" data-val="low">Dry</button>
-          <button class="trait-pill" data-val="medium">Off-Dry</button>
-          <button class="trait-pill" data-val="high">Sweet</button>
-        </div>
-      </div>
-
-      <div class="trait-block" data-trait-block="oak">
-        <div class="trait-head">
-          <span class="trait-label">Oak</span>
-          <button class="trait-skip" data-skip="oak">Skip</button>
-        </div>
-        <div class="trait-desc">Do you enjoy woody, toasty notes?</div>
-        <div class="trait-options" data-trait="oak">
-          <button class="trait-pill" data-val="none">Unoaked</button>
-          <button class="trait-pill" data-val="low">Light</button>
-          <button class="trait-pill" data-val="medium">Medium</button>
-          <button class="trait-pill" data-val="high">Bold</button>
-        </div>
-      </div>
-
-      <div style="margin-top:1.7rem;opacity:0;transition:opacity .4s ease" id="palate-continue">
         <button class="btn-primary" onclick="goTo('s-price')">Continue →</button>
       </div>
     </div>
@@ -772,7 +680,7 @@ a { color: var(--gold-light); }
     <div class="parallax-bg" data-bg="img/cellar.jpg" id="bg-price"></div>
     <div class="screen-overlay"></div>
     <div class="content">
-      <div class="eyebrow">Step 7 of 7</div>
+      <div class="eyebrow">Step 6 of 6</div>
       <p class="headline" id="tw-price"></p>
       <div class="price-grid" id="price-choices">
         <button class="price-btn" data-val="<500"><span>Under ₹500</span><span class="tag">₹&lt;500</span></button>
@@ -985,11 +893,9 @@ function getRecommendations(prefs, topN) {
 const state = {
   type: null, occasion: null, food: null,
   aroma: new Set(), flavour: new Set(),           // multi-select tag pickers
-  body: null, fruit: null, sweetness: null, oak: null,  // Style — unscored
   price: null
 };
 let lastResults = [];
-const traitAnswered = { body: false, fruit: false, sweetness: false, oak: false };
 
 /* ═══════════════════════════════════════════════════════════════
    VISITOR LOCATION — "where people come from"
@@ -1104,7 +1010,7 @@ async function submitFratelliEnquiry({ name, email, mobile }) {
 /* ═══════════════════════════════════════════════════════════════
    SCREEN ENGINE
 ════════════════════════════════════════════════════════════════ */
-const QUIZ_SCREENS = ['s-wine', 's-occasion', 's-food', 's-aroma', 's-flavour', 's-palate', 's-price', 's-recs'];
+const QUIZ_SCREENS = ['s-wine', 's-occasion', 's-food', 's-aroma', 's-flavour', 's-price', 's-recs'];
 
 function qs(sel, root) { return (root || document).querySelector(sel); }
 function qsa(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
@@ -1213,34 +1119,6 @@ qsa('.price-btn').forEach(btn => {
   });
 });
 
-/* ── Palate traits (skippable) ── */
-qsa('.trait-options').forEach(group => {
-  const trait = group.dataset.trait;
-  qsa('.trait-pill', group).forEach(pill => {
-    pill.addEventListener('click', () => {
-      state[trait] = pill.dataset.val;
-      qsa('.trait-pill', group).forEach(p => p.classList.remove('selected'));
-      pill.classList.add('selected');
-      qs(`[data-skip="${trait}"]`).classList.remove('active');
-      markTraitAnswered(trait);
-    });
-  });
-});
-qsa('.trait-skip').forEach(skipBtn => {
-  skipBtn.addEventListener('click', () => {
-    const trait = skipBtn.dataset.skip;
-    state[trait] = null;
-    qsa('.trait-pill', qs(`[data-trait="${trait}"]`)).forEach(p => p.classList.remove('selected'));
-    skipBtn.classList.add('active');
-    markTraitAnswered(trait);
-  });
-});
-function markTraitAnswered(trait) {
-  traitAnswered[trait] = true;
-  const allDone = Object.values(traitAnswered).every(Boolean);
-  document.getElementById('palate-continue').style.opacity = allDone ? '1' : '0';
-}
-
 /* ═══════════════════════════════════════════════════════════════
    RESULTS RENDERING
 ════════════════════════════════════════════════════════════════ */
@@ -1249,13 +1127,14 @@ function titleCase(s) {
   return s.replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase());
 }
 
-function animateCount(el, target, duration) {
+function animateCount(el, target, duration, format) {
   const start = performance.now();
   duration = duration || 900;
+  format = format || (v => Math.round(v) + '%');
   function frame(now) {
     const p = Math.min(1, (now - start) / duration);
     const eased = 1 - Math.pow(1 - p, 3);
-    el.textContent = Math.round(target * eased) + '%';
+    el.textContent = format(target * eased);
     if (p < 1) requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
@@ -1297,7 +1176,11 @@ function renderResults() {
           <div class="rec-meta">${TYPE_LABELS[w.type]} · ${PRICE_LABELS[w.price]}</div>
         </div>
         <div class="rec-match">
-          <div class="num" data-target="${r.pct}">0%</div>
+          <div class="stars" role="img" aria-label="${(r.pct / 20).toFixed(1)} out of 5 stars">
+            <div class="stars-bg">★★★★★</div>
+            <div class="stars-fg" data-fill="${r.pct}">★★★★★</div>
+          </div>
+          <div class="num">0.0/5</div>
           <div class="lbl">Match</div>
         </div>
       </div>
@@ -1313,8 +1196,11 @@ function renderResults() {
     const delay = 180 + i * 160;
     setTimeout(() => {
       card.classList.add('show');
-      animateCount(qs('.num', card), r.pct);
+      // r.pct (0-100) doubles as the star-fill width AND maps directly
+      // to a 0-5 star rating (pct/20) — 100% match = 5.0/5 stars.
+      animateCount(qs('.num', card), r.pct / 20, 900, v => v.toFixed(1) + '/5');
       requestAnimationFrame(() => requestAnimationFrame(() => {
+        qs('.stars-fg', card).style.width = r.pct + '%';
         qsa('.score-bar-fill', card).forEach(fill => { fill.style.width = fill.dataset.fill + '%'; });
       }));
     }, delay);
@@ -1411,9 +1297,6 @@ const ON_ENTER = {
     renderTagGrid('flavour-tags', 'flavour1', 'flavour2', state.flavour);
     typewrite('tw-flavour', "Now, what flavours are you craving?", 26);
   },
-  's-palate': function () {
-    typewrite('tw-palate', "A little about your style.", 26);
-  },
   's-price': function () {
     typewrite('tw-price', "What's your budget?", 26, () => {
       document.getElementById('price-choices').classList.add('visible');
@@ -1433,10 +1316,7 @@ function restartQuiz() {
   Object.keys(state).forEach(k => state[k] = null);
   state.aroma = new Set();
   state.flavour = new Set();
-  Object.keys(traitAnswered).forEach(k => traitAnswered[k] = false);
-  document.getElementById('palate-continue').style.opacity = '0';
-  qsa('.choice-btn.selected, .price-btn.selected, .trait-pill.selected, .tag-chip.selected').forEach(el => el.classList.remove('selected'));
-  qsa('.trait-skip.active').forEach(el => el.classList.remove('active'));
+  qsa('.choice-btn.selected, .price-btn.selected, .tag-chip.selected').forEach(el => el.classList.remove('selected'));
   qsa('.choice-grid.visible, .price-grid.visible').forEach(el => el.classList.remove('visible'));
   document.getElementById('signup-form').reset();
   goTo('s-wine');
