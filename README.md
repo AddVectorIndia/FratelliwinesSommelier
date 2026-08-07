@@ -168,6 +168,47 @@ most likely to quietly break) the Aroma/Flavour Skip button rendering
 pixel-identical (padding, font-size, layout direction, colors) to
 every other `.choice-btn` in the quiz.
 
+**Light-theme card surfaces are more opaque than dark theme's**
+(`--surface-1/1-end/2` are a near-solid cream, ~88–92% alpha, vs. dark
+theme's near-transparent ~3–5%) — a fully-opaque dark card still reads
+as "part of the photo" against a dark backdrop, but a fully-opaque
+light card against the same dark-ish source photos would look like a
+flat paper cutout, so dark theme leans transparent; light theme needs
+enough coverage that card text stays legible over whatever's directly
+behind it.
+
+**Aroma/Flavour tag chips (`.tag-chip`) use the exact same tokens as
+`.choice-btn`** (background, border, border-radius, hover/selected
+treatment) — only the layout differs (a wrapping pill row via
+`.tag-grid`, not a fixed grid), since aroma/flavour lists run to a
+dozen-plus items. Verified via computed-style comparison against a
+reference `.choice-btn` in both themes (background, border, and
+border-radius came back identical in the CDP sweep).
+
+## Scroll container (`.content`, not `.screen`)
+
+Each `<section class="screen">` holds three absolutely-positioned
+layers: `.parallax-bg` (photo), `.screen-overlay` (gradient tint), and
+`.content` (the actual copy/buttons/cards). **`.content` is the one
+that scrolls** (`overflow-y: auto; max-height: 100%`) on screens whose
+content is taller than the viewport (only the 3-card results screen
+realistically triggers this on a short phone) — `.screen` itself does
+not scroll.
+
+This matters because `.parallax-bg`/`.screen-overlay` are positioned
+relative to `.screen` (their nearest positioned ancestor). If `.screen`
+were *also* the scroll container, those layers would be scrolled along
+with everything else — since they're a fixed 900px-ish tall box, once
+the user scrolled past the last ~250px of a longer results screen, the
+background/overlay would run out of covered height, exposing
+raw, unfiltered photo underneath. In dark theme that went unnoticed
+because the overlay there is dark enough to flatten out any photo
+brightness variation regardless of scroll position; in light theme it
+showed up as a stark near-black horizontal band behind the third
+recommendation card. Keeping the scroll on `.content` instead means
+the background/overlay always stay pinned behind the full 900px
+viewport no matter how far the content itself has scrolled.
+
 ## Signup fields
 
 Email is required; mobile is optional (name is optional too, to keep

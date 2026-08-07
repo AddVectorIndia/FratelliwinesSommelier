@@ -131,9 +131,18 @@ html { -webkit-text-size-adjust: 100%; height: 100%; }
     --text-dim:   rgba(42,17,22,0.68);
     --text-muted: #7C6952;
 
-    --surface-1:     rgba(42,17,22,0.035);
-    --surface-1-end: rgba(42,17,22,0.015);
-    --surface-2:     rgba(42,17,22,0.045);
+    /* Near-opaque cream "frosted glass", not a barely-tinted wash —
+       every photo (cellar.jpg especially) has real brightness swings
+       from near-black shadow to bright highlight, and light theme's
+       overlay is deliberately much lighter than dark theme's, so a
+       low-opacity card here doesn't mask that variation: text ends up
+       sitting on whatever the photo happens to be at that scroll
+       position, dark band included. Dark theme doesn't have this
+       problem because its strong dark overlay already flattens the
+       photo to near-black before the card tint is even applied. */
+    --surface-1:     rgba(251,245,234,0.88);
+    --surface-1-end: rgba(251,245,234,0.8);
+    --surface-2:     rgba(251,245,234,0.92);
 
     --border-1: rgba(42,17,22,0.14);
     --border-2: rgba(42,17,22,0.17);
@@ -161,9 +170,9 @@ html { -webkit-text-size-adjust: 100%; height: 100%; }
   --text:       #2A1116;
   --text-dim:   rgba(42,17,22,0.68);
   --text-muted: #7C6952;
-  --surface-1:     rgba(42,17,22,0.035);
-  --surface-1-end: rgba(42,17,22,0.015);
-  --surface-2:     rgba(42,17,22,0.045);
+  --surface-1:     rgba(251,245,234,0.88);
+  --surface-1-end: rgba(251,245,234,0.8);
+  --surface-2:     rgba(251,245,234,0.92);
   --border-1: rgba(42,17,22,0.14);
   --border-2: rgba(42,17,22,0.17);
   --border-3: rgba(42,17,22,0.2);
@@ -241,8 +250,17 @@ a { color: var(--gold-light); }
   transform: translateY(18px) scale(0.99);
   transition: opacity .55s var(--ease), transform .55s var(--ease), visibility 0s .55s;
   pointer-events: none;
-  overflow-y: auto;
-  overflow-x: hidden;
+  /* NOTE: overflow intentionally lives on .content below, not here.
+     .parallax-bg / .screen-overlay are absolutely-positioned children
+     of THIS element — if .screen were the scroll container, they'd be
+     "part of" its scrollable content and would scroll along with it
+     (since their containing block is the scroll container itself),
+     sliding the fixed-height background/overlay up past their own
+     900px box on a tall screen and exposing raw, unfiltered photo
+     underneath — that's what caused the dark band artifact behind the
+     results cards in light theme. Keeping .screen itself non-scrolling
+     means the background stays pinned behind the full viewport
+     regardless of how much .content scrolls internally. */
 }
 .screen.active {
   opacity: 1;
@@ -293,6 +311,9 @@ a { color: var(--gold-light); }
   z-index: 2;
   width: 100%;
   max-width: 460px;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -500,21 +521,25 @@ a { color: var(--gold-light); }
   width: 100%; margin-top: 1.4rem;
 }
 .tag-chip {
+  /* Same tokens/treatment as .choice-btn (background, border, radius,
+     hover, selected) for full visual consistency across the quiz —
+     only the layout differs (flex-wrap pill row here, not a fixed
+     grid), since aroma/flavour lists run to a dozen-plus items and a
+     grid of full-size cards would get unwieldy. */
   background: var(--surface-1);
-  border: 1px solid var(--border-2);
+  border: 1px solid var(--border-1);
   color: var(--text);
-  border-radius: 999px;
-  padding: 0.5rem 0.95rem;
-  font-size: 0.76rem;
+  border-radius: 4px;
+  padding: 0.65rem 1rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
   transition: border-color .2s, background .2s, transform .15s;
 }
-.tag-chip:hover { border-color: var(--gold-dim); }
+.tag-chip:hover { border-color: var(--gold-dim); background: var(--gold-wash-2); }
 .tag-chip.selected {
   border-color: var(--gold);
-  background: var(--gold);
-  color: var(--ink);
-  font-weight: 600;
-  transform: scale(1.04);
+  background: var(--gold-wash-3);
+  transform: scale(1.03);
 }
 .tag-empty { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
 
@@ -696,7 +721,7 @@ a { color: var(--gold-light); }
 
 @media (max-width: 380px) {
   .choice-btn { font-size: 0.76rem; padding: 0.8rem 0.5rem; }
-  .tag-chip { font-size: 0.7rem; padding: 0.45rem 0.8rem; }
+  .tag-chip { font-size: 0.72rem; padding: 0.55rem 0.85rem; }
 }
 </style>
 </head>
@@ -1238,6 +1263,8 @@ function goTo(id) {
   if (!to || to === from) return;
   if (from) from.classList.remove('active');
   to.classList.add('active');
+  const toContent = qs('.content', to);
+  if (toContent) toContent.scrollTop = 0; // always enter a screen scrolled to top
   lazyLoadBg(to);
   updateProgress(id);
   window.scrollTo(0, 0);
