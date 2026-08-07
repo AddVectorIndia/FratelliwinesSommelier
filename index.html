@@ -138,10 +138,12 @@ html { -webkit-text-size-adjust: 100%; height: 100%; }
        fighting a background-scrolling bug that let raw unfiltered
        photo show through card text (see .content overflow notes
        below) — that's fixed at the source now, so this can stay
-       genuinely translucent again. */
-    --surface-1:     rgba(42,17,22,0.035);
-    --surface-1-end: rgba(42,17,22,0.015);
-    --surface-2:     rgba(42,17,22,0.045);
+       genuinely translucent again — pushed even lighter than the
+       original tint since even that still read as a whitish/opaque
+       block against the photo rather than true glass. */
+    --surface-1:     rgba(42,17,22,0.018);
+    --surface-1-end: rgba(42,17,22,0.008);
+    --surface-2:     rgba(42,17,22,0.022);
 
     --border-1: rgba(42,17,22,0.14);
     --border-2: rgba(42,17,22,0.17);
@@ -169,9 +171,9 @@ html { -webkit-text-size-adjust: 100%; height: 100%; }
   --text:       #2A1116;
   --text-dim:   rgba(42,17,22,0.68);
   --text-muted: #7C6952;
-  --surface-1:     rgba(42,17,22,0.035);
-  --surface-1-end: rgba(42,17,22,0.015);
-  --surface-2:     rgba(42,17,22,0.045);
+  --surface-1:     rgba(42,17,22,0.018);
+  --surface-1-end: rgba(42,17,22,0.008);
+  --surface-2:     rgba(42,17,22,0.022);
   --border-1: rgba(42,17,22,0.14);
   --border-2: rgba(42,17,22,0.17);
   --border-3: rgba(42,17,22,0.2);
@@ -505,18 +507,18 @@ a { color: var(--gold-light); }
 .choice-btn .icon { font-size: 1.35rem; }
 .choice-btn:hover { border-color: var(--gold-dim); background: var(--gold-wash-2); }
 .choice-btn.selected {
-  /* transform doesn't affect grid/flex layout, so the scaled-up box
-     grows past its own cell into the gap — a plain z-index:auto
-     sibling that comes LATER in the DOM (e.g. the next grid cell)
-     still paints on top of that overflow by source order, making the
-     selected button look like it dips behind its neighbor right at
-     the moment it's picked. Pin it above every sibling explicitly so
-     that never happens, on top of the extra gap breathing room above. */
-  position: relative;
-  z-index: 2;
+  /* No transform here on purpose — a scale() doesn't affect grid/flex
+     layout, so a scaled-up box visually grows past its own cell into
+     the gap, and a plain later-DOM sibling (e.g. the next grid cell)
+     paints over that overflow by source order, making the selected
+     button look like it dips behind its neighbor right when it's
+     picked. Widening the gap and adding z-index both reduced it but
+     didn't fully close the gap at every viewport width, so the
+     "pop" is dropped in favor of a same-footprint color change only —
+     border/background, no size change at all — same treatment
+     .price-btn.selected already uses without this issue. */
   border-color: var(--gold);
   background: var(--gold-wash-3);
-  transform: scale(1.03);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -545,13 +547,10 @@ a { color: var(--gold-light); }
 }
 .tag-chip:hover { border-color: var(--gold-dim); background: var(--gold-wash-2); }
 .tag-chip.selected {
-  /* Same overlap fix as .choice-btn.selected — pin above neighbors
-     since the scale transform can visually spill into the gap. */
-  position: relative;
-  z-index: 2;
+  /* Same reasoning as .choice-btn.selected — no transform, color
+     change only, so there's no growth to spill into a neighbor. */
   border-color: var(--gold);
   background: var(--gold-wash-3);
-  transform: scale(1.03);
 }
 .tag-empty { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
 
