@@ -118,36 +118,55 @@ server-side lookup or a paid tier under sustained real traffic.
 
 ## Dark / light theme
 
-Follows the visitor's OS/browser preference automatically
-(`prefers-color-scheme`) — no manual toggle. Every color in the
-stylesheet is a CSS custom property (`--bg`, `--text`, `--text-dim`,
-`--text-muted`, `--surface-*`, `--border-*`, `--track-*`, `--gold`,
-`--gold-light`, `--overlay-1/2`, …) defined once in `:root` for dark
-(the default) and re-defined under `@media (prefers-color-scheme:
-light)` — nothing else in the file references a literal color, so the
-whole site reskins from those two blocks alone.
+Defaults to the visitor's OS/browser preference (`prefers-color-scheme`),
+**plus a manual toggle button** (top-right, sun/moon icon — shows the
+icon for what tapping it switches *to*). A manual choice is saved to
+`localStorage['fratelli_theme']` and wins over the system setting from
+then on; without one, the page keeps following the OS live (including
+if it changes mid-visit). Every color in the stylesheet is a CSS custom
+property (`--bg`, `--text`, `--text-dim`, `--text-muted`, `--surface-*`,
+`--border-*`, `--track-*`, `--gold`, `--gold-light`, `--overlay-1/2`, …)
+— nothing else in the file references a literal color. Three places
+define the same token set: `:root` (dark, the default), `@media
+(prefers-color-scheme: light) { :root:not([data-theme]) {…} }` (system
+preference, only when there's no manual override), and `:root[data-
+theme="light"]` / `:root[data-theme="dark"]` (the manual override,
+an attribute selector so it beats the media query either direction).
 
-A few things are deliberately **not** theme-swapped:
-- `--ink` (near-black text sitting on a gold-filled element — buttons,
-  selected chips) stays fixed, since gold's brightness barely changes
-  between themes and dark text keeps working on it either way.
-- `--gold`/`--gold-light` *do* change (darkened for light mode — the
-  pale dark-mode gold reads at very low contrast against a light
-  background), but `--gold-dim`/`--gold-wash-*` (translucent gold used
-  for hover/selected washes) don't bother, since a translucent gold
-  tint reads fine as an accent on both a near-black and a near-white
-  surface.
-- `--overlay-1`/`--overlay-2` (the scrim over every photo background)
-  flip from a dark wash to a light one in light mode, paired with dark
-  `--text`, rather than just getting a little less dark — otherwise
-  light-mode text would still need to be pale to read on a dark scrim,
-  defeating the point.
+**The background photos also get genuinely brighter in light mode**,
+not just a different-colored overlay on the same dark image:
+- `.parallax-bg` gets `saturate(1.05) brightness(1.2)` in light theme.
+- The landing/signup screens (the two that use `vineyard.jpg`) instead
+  swap to an entirely different, brighter source photo —
+  `img/vineyard-light.jpg`, sourced from fratelliwines.in's own bright
+  vineyard photography (same brand, so no licensing concern) rather
+  than just filtering the existing moody one. `lazyLoadBg()` picks a
+  screen's `data-bg-light` attribute over `data-bg` when
+  `isLightTheme()` is true, and re-resolves on every theme change (it
+  tracks the currently-loaded URL and only reloads if it's wrong for
+  the current theme) — so toggling mid-visit updates the visible
+  screen immediately, not just on next navigation.
+- The other four photos (cellar/grapes/harvest/sculpture) don't have a
+  bright-specific replacement (no equally good people-free alternative
+  turned up on fratelliwines.in for those particular scenes), so they
+  rely on the CSS filter alone.
+
+A few things are deliberately **not** theme-swapped: `--ink` (text on
+gold-filled elements — buttons, selected chips — stays fixed dark,
+since gold's own brightness barely changes between themes) and
+`--gold-dim`/`--gold-wash-*` (translucent gold hover/selected washes —
+these read fine as an accent on both a near-black and a near-white
+surface, only the *solid* `--gold`/`--gold-light` needed darkening for
+light-mode contrast).
 
 Verified via Chrome DevTools Protocol's `Emulation.setEmulatedMedia`
-(forces `prefers-color-scheme` without needing an actual OS-level
-toggle) across the full quiz in both themes — landing, a choice
-screen, the tag pickers, results, and signup all render with correct
-contrast and no leftover hardcoded colors.
+(forces `prefers-color-scheme` without an actual OS-level toggle)
+across the full quiz in both themes, plus the manual toggle itself:
+persistence across reload, the image swap firing correctly and
+immediately on toggle, and (this being where a redesign like this is
+most likely to quietly break) the Aroma/Flavour Skip button rendering
+pixel-identical (padding, font-size, layout direction, colors) to
+every other `.choice-btn` in the quiz.
 
 ## Signup fields
 

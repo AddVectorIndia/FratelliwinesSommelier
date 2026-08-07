@@ -117,8 +117,15 @@ html { -webkit-text-size-adjust: 100%; height: 100%; }
   --ease: cubic-bezier(.22,.9,.32,1);
 }
 
+/* Light theme values live in TWO places that must be kept in sync:
+   the media query below (applies when the OS/browser reports light
+   and the guest hasn't manually overridden it) and the [data-theme]
+   attribute selectors further down (the manual toggle button sets
+   data-theme on <html>, which — being an attribute selector — beats
+   the plain :root the media query targets, regardless of which way
+   the system preference actually points). */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme]) {
     --bg:         #FBF5EA;
     --text:       #2A1116;
     --text-dim:   rgba(42,17,22,0.68);
@@ -147,6 +154,41 @@ html { -webkit-text-size-adjust: 100%; height: 100%; }
     --overlay-1: rgba(251,245,234,.6);
     --overlay-2: rgba(251,245,234,.82);
   }
+}
+
+:root[data-theme="light"] {
+  --bg:         #FBF5EA;
+  --text:       #2A1116;
+  --text-dim:   rgba(42,17,22,0.68);
+  --text-muted: #7C6952;
+  --surface-1:     rgba(42,17,22,0.035);
+  --surface-1-end: rgba(42,17,22,0.015);
+  --surface-2:     rgba(42,17,22,0.045);
+  --border-1: rgba(42,17,22,0.14);
+  --border-2: rgba(42,17,22,0.17);
+  --border-3: rgba(42,17,22,0.2);
+  --border-4: rgba(42,17,22,0.12);
+  --track-1: rgba(42,17,22,0.1);
+  --track-2: rgba(42,17,22,0.15);
+  --track-3: rgba(42,17,22,0.22);
+  --gold:       #9A6B22;
+  --gold-light: #7E541B;
+  --gold-dim:   rgba(154,107,34,0.3);
+  --overlay-1: rgba(251,245,234,.6);
+  --overlay-2: rgba(251,245,234,.82);
+}
+
+/* Explicit dark override so a guest whose OS reports light can still
+   force dark manually (attribute selector beats the media query's
+   plain :root either way, so this only needs to restate the (already
+   the base) dark values for clarity/robustness). */
+:root[data-theme="dark"] {
+  --bg: #080306; --text: #F4EAD8; --text-dim: rgba(244,234,216,0.62); --text-muted: #9A8A72;
+  --surface-1: rgba(244,234,216,0.04); --surface-1-end: rgba(244,234,216,0.02); --surface-2: rgba(244,234,216,0.05);
+  --border-1: rgba(244,234,216,0.14); --border-2: rgba(244,234,216,0.16); --border-3: rgba(244,234,216,0.18); --border-4: rgba(244,234,216,0.12);
+  --track-1: rgba(244,234,216,0.1); --track-2: rgba(244,234,216,0.15); --track-3: rgba(244,234,216,0.2);
+  --gold: #C4973E; --gold-light: #E8C87A; --gold-dim: rgba(196,151,62,0.25);
+  --overlay-1: rgba(8,3,6,.55); --overlay-2: rgba(8,3,6,.72);
 }
 
 body {
@@ -229,6 +271,15 @@ a { color: var(--gold-light); }
 @media (prefers-reduced-motion: reduce) {
   .parallax-bg { animation: none !important; }
 }
+
+/* Light theme: the same photos, genuinely brighter/warmer rather than
+   just a differently-colored overlay on top of the same dark image —
+   landing/signup also swap in a brighter source photo entirely where
+   one's available (see lazyLoadBg() in the script, data-bg-light). */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .parallax-bg { filter: saturate(1.05) brightness(1.2); }
+}
+:root[data-theme="light"] .parallax-bg { filter: saturate(1.05) brightness(1.2); }
 
 .screen-overlay {
   position: absolute;
@@ -341,6 +392,28 @@ a { color: var(--gold-light); }
 }
 .progress .dot.done { background: var(--gold); }
 .progress .dot.now { background: var(--gold-light); transform: scale(1.5); }
+
+/* Manual dark/light toggle. Shows the icon for what tapping it
+   switches TO (sun while dark, moon while light). Defaults to the
+   OS/browser preference; a tap persists an explicit choice that then
+   wins over the system setting until cleared (see applyTheme() /
+   toggleTheme() in the script). */
+.theme-toggle {
+  position: fixed;
+  top: 0.85rem; right: 0.9rem;
+  z-index: 21;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.95rem;
+  line-height: 1;
+  transition: border-color .2s, background .2s, transform .15s;
+}
+.theme-toggle:hover { border-color: var(--gold-dim); transform: scale(1.06); }
+.theme-toggle:active { transform: scale(0.94); }
 
 /* ═══════════════════════════════════════════════════════════════
    BUTTONS
@@ -639,11 +712,13 @@ a { color: var(--gold-light); }
   <span class="dot" data-step="6"></span>
 </div>
 
+<button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Switch between light and dark theme" title="Switch theme"></button>
+
 <div id="app">
 
   <!-- ══════════════════════ LANDING ══════════════════════ -->
   <section class="screen active" id="s-landing">
-    <div class="parallax-bg" data-bg="img/vineyard.jpg" id="bg-landing"></div>
+    <div class="parallax-bg" data-bg="img/vineyard.jpg" data-bg-light="img/vineyard-light.jpg" id="bg-landing"></div>
     <div class="screen-overlay"></div>
     <div class="content">
       <div class="logo-mark fade-in">F</div>
@@ -727,8 +802,8 @@ a { color: var(--gold-light); }
       <p class="headline" id="tw-aroma"></p>
       <p class="subtext">Pick the one that draws you in most — this just colours your results, it won't affect ranking.</p>
       <div class="tag-grid" id="aroma-tags"></div>
-      <div style="margin-top:1.7rem;display:flex;justify-content:center" id="aroma-continue">
-        <button class="choice-btn" style="flex-direction:row;gap:0.5rem;padding:0.75rem 1.4rem" onclick="goTo('s-flavour')"><span class="icon" style="font-size:1rem">✦</span>Skip</button>
+      <div class="choice-grid visible" style="margin-top:1.7rem" id="aroma-continue">
+        <button class="choice-btn span-2" data-val="skip" onclick="selectAndAdvance(this, 's-flavour')"><span class="icon">✦</span>Skip</button>
       </div>
     </div>
   </section>
@@ -743,8 +818,8 @@ a { color: var(--gold-light); }
       <p class="headline" id="tw-flavour"></p>
       <p class="subtext">Pick the one you're craving most — this is the "flavour" quarter of your match score.</p>
       <div class="tag-grid" id="flavour-tags"></div>
-      <div style="margin-top:1.7rem;display:flex;justify-content:center" id="flavour-continue">
-        <button class="choice-btn" style="flex-direction:row;gap:0.5rem;padding:0.75rem 1.4rem" onclick="goTo('s-price')"><span class="icon" style="font-size:1rem">✦</span>Skip</button>
+      <div class="choice-grid visible" style="margin-top:1.7rem" id="flavour-continue">
+        <button class="choice-btn span-2" data-val="skip" onclick="selectAndAdvance(this, 's-price')"><span class="icon">✦</span>Skip</button>
       </div>
     </div>
   </section>
@@ -784,7 +859,7 @@ a { color: var(--gold-light); }
 
   <!-- ══════════════════════ SIGNUP ══════════════════════ -->
   <section class="screen" id="s-signup">
-    <div class="parallax-bg" data-bg="img/vineyard.jpg" id="bg-signup"></div>
+    <div class="parallax-bg" data-bg="img/vineyard.jpg" data-bg-light="img/vineyard-light.jpg" id="bg-signup"></div>
     <div class="screen-overlay"></div>
     <div class="content" id="signup-content">
       <div class="eyebrow">Club Fratelli</div>
@@ -1089,14 +1164,60 @@ const QUIZ_SCREENS = ['s-wine', 's-occasion', 's-food', 's-aroma', 's-flavour', 
 function qs(sel, root) { return (root || document).querySelector(sel); }
 function qsa(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
 
+/* ═══════════════════════════════════════════════════════════════
+   THEME — dark/light, defaults to the OS/browser preference
+   (prefers-color-scheme); a tap on the toggle button persists an
+   explicit choice (localStorage) that then wins over the system
+   setting until the guest clears it by toggling back to match it.
+════════════════════════════════════════════════════════════════ */
+function isLightTheme() {
+  const explicit = document.documentElement.getAttribute('data-theme');
+  if (explicit) return explicit === 'light';
+  return window.matchMedia('(prefers-color-scheme: light)').matches;
+}
+
+function updateThemeToggleIcon() {
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  // Shows the icon for what tapping it switches TO.
+  btn.textContent = isLightTheme() ? '🌙' : '☀️';
+}
+
+function applyTheme(theme) {
+  if (theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem('fratelli_theme', theme); } catch (e) {}
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    try { localStorage.removeItem('fratelli_theme'); } catch (e) {}
+  }
+  updateThemeToggleIcon();
+  // Re-check the currently visible screen's background — lazyLoadBg
+  // only actually reloads it if the theme-correct image differs from
+  // what's already showing. Other (unvisited or previously-visited)
+  // screens self-correct the next time goTo() reaches them.
+  const active = qs('.screen.active');
+  if (active) lazyLoadBg(active);
+}
+
+function toggleTheme() {
+  applyTheme(isLightTheme() ? 'dark' : 'light');
+}
+
 function lazyLoadBg(screenEl) {
   const bg = qs('.parallax-bg', screenEl);
-  if (!bg || bg.classList.contains('loaded')) return;
-  const url = bg.dataset.bg;
+  if (!bg) return;
+  // Prefer a light-theme-specific photo (data-bg-light) when one's
+  // provided and we're actually in light theme; otherwise the usual
+  // (darker) photo, brightened via the .parallax-bg filter instead.
+  const url = (isLightTheme() && bg.dataset.bgLight) ? bg.dataset.bgLight : bg.dataset.bg;
   if (!url) return;
+  // Re-run after a theme toggle: skip only if the CORRECT image for
+  // the current theme is already loaded, not just *some* image.
+  if (bg.classList.contains('loaded') && bg.dataset.loadedUrl === url) return;
   const img = new Image();
-  img.onload = () => { bg.style.backgroundImage = `url("${url}")`; bg.classList.add('loaded'); };
-  img.onerror = () => { bg.classList.add('loaded'); }; // fail open — overlay gradient still reads fine
+  img.onload = () => { bg.style.backgroundImage = `url("${url}")`; bg.classList.add('loaded'); bg.dataset.loadedUrl = url; };
+  img.onerror = () => { bg.classList.add('loaded'); bg.dataset.loadedUrl = url; }; // fail open — overlay gradient still reads fine
   img.src = url;
 }
 
@@ -1144,6 +1265,15 @@ function typewrite(elId, text, speed, cb) {
 /* ═══════════════════════════════════════════════════════════════
    CHOICE WIRING
 ════════════════════════════════════════════════════════════════ */
+// Same "flash selected, then advance" feedback as wireChoiceGrid's
+// buttons, for the standalone Aroma/Flavour Skip buttons (which sit
+// below a dynamically-built tag grid rather than inside their own
+// wireChoiceGrid-managed one).
+function selectAndAdvance(btn, nextScreen) {
+  btn.classList.add('selected');
+  setTimeout(() => goTo(nextScreen), 480);
+}
+
 function wireChoiceGrid(containerId, key, nextScreen, revealDelay) {
   const grid = document.getElementById(containerId);
   qsa('.choice-btn', grid).forEach(btn => {
@@ -1440,10 +1570,30 @@ function restartQuiz() {
   state.aroma = new Set();
   state.flavour = new Set();
   qsa('.choice-btn.selected, .price-btn.selected, .tag-chip.selected').forEach(el => el.classList.remove('selected'));
-  qsa('.choice-grid.visible, .price-grid.visible').forEach(el => el.classList.remove('visible'));
+  // #aroma-continue/#flavour-continue's Skip buttons are permanently
+  // visible (no fade-in triggered by ON_ENTER, unlike the other
+  // choice grids), so they're excluded here rather than losing their
+  // 'visible' class with nothing left to ever restore it.
+  qsa('.choice-grid.visible:not(#aroma-continue):not(#flavour-continue), .price-grid.visible').forEach(el => el.classList.remove('visible'));
   document.getElementById('signup-form').reset();
   goTo('s-wine');
 }
+
+// Restore an explicit theme choice from a previous visit, if any —
+// before the first lazyLoadBg call below, so the landing photo loads
+// the right variant immediately rather than flashing then swapping.
+try {
+  const savedTheme = localStorage.getItem('fratelli_theme');
+  if (savedTheme === 'light' || savedTheme === 'dark') document.documentElement.setAttribute('data-theme', savedTheme);
+} catch (e) {}
+updateThemeToggleIcon();
+// If the guest hasn't made an explicit choice, keep following the OS
+// live (e.g. their system switches to dark at sunset mid-visit).
+try {
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+    if (!document.documentElement.getAttribute('data-theme')) applyTheme(null);
+  });
+} catch (e) {}
 
 lazyLoadBg(document.getElementById('s-landing'));
 detectVisitorLocation();
