@@ -32,23 +32,41 @@ guest as a **star rating out of 5** (100% = 5.0 stars):
 |---|---|---|
 | **50%** | Category (wine type) | Exact type match = full credit; "Surprise Me" = full credit for every type |
 | **25%** | Price | Exact band = full credit; an adjacent band = partial credit; "doesn't matter" = full credit |
-| **25%** | Flavour | Guest multi-selects real tasting notes (from the wine data's Flavour1/Flavour2 columns, e.g. "Apple", "Baked Spices"); score = the fraction of that wine's own 1–2 flavour notes the guest picked. No picks = neutral 50%, never a penalty |
+| **25%** | Flavour | Guest single-selects one real tasting note (from the wine data's Flavour1/Flavour2 columns, e.g. "Apple", "Baked Spices"); score = the fraction of *that wine's own* flavour notes the pick matches — 1.0 if the wine only has one note and it matches, 0.5 if the wine has two notes and the pick matches one of them, 0 if it matches neither. No pick = neutral 50%, never a penalty |
 
 The Flavour (and Aroma) picker only shows notes that actually occur on
 wines of the type the guest already chose in step 1, so a guest is
 never offered a note that can't possibly show up in their results.
-Choosing "Surprise Me" shows the full catalogue-wide list.
+Choosing "Surprise Me" shows the full catalogue-wide list. Both pickers
+are **single-select** — picking a new note replaces the previous pick;
+tapping the selected note again clears it (same as skipping).
 
 **Occasion, Food and Aroma are unscored, personalization-only** — asked,
 shown in results copy, captured on the lead, zero ranking weight. Each
 is skippable (Occasion/Food via an explicit "Skip" choice, Aroma by
-simply not tapping any tag).
+simply not tapping any note).
 
 The exact formulas (`categoryMatch`, `priceMatch`, `flavourTagMatch`,
 `getAvailableTags`, `scoreWine`) are in the `<script>` block in
 `index.html` — search for "SCORING". The star display itself is just a
 presentation layer over the same 0–100 score (`score.pct / 20`); it
 doesn't change how wines are ranked.
+
+### Results breakdown bars
+
+Each card shows one bar per question asked, in the order they were
+asked: Category, Occasion, Food, Aroma, Flavour, Price — no percentage
+number, just the bar. Category/Flavour/Price show the *real* score
+component (Flavour can legitimately show an empty bar if the guest's
+pick doesn't match that wine at all). Occasion/Food/Aroma carry 0%
+actual weight, so rather than an empty bar giving that away, they
+render a deterministic, wine-specific "looks-decent" fill
+(`personalizationFill()` in `index.html`, seeded per wine+dimension so
+it's stable across re-renders, not fabricated fresh each time) — higher
+if there's a real match to check (Occasion against the wine's occasion
+list, Aroma against its aroma notes), always at least ~60% otherwise.
+Food has no per-wine data to check against at all, so it's always in
+that fallback band.
 
 ## Lead capture — Fratelli Enquiry API
 

@@ -479,7 +479,6 @@ a { color: var(--gold-light); }
   background: linear-gradient(90deg, var(--gold), var(--gold-light));
   transition: width 1s var(--ease);
 }
-.score-bar-pct { width: 30px; text-align: right; font-size: 0.62rem; color: var(--cream-muted); }
 
 .results-actions {
   display: flex; flex-direction: column; align-items: center; gap: 0.7rem;
@@ -644,14 +643,14 @@ a { color: var(--gold-light); }
   </section>
 
   <!-- ══════════════════════ AROMA (personalization only, unscored — restricted to the
-       chosen wine type, multi-select, skippable) ══════════════════════ -->
+       chosen wine type, single-select, skippable) ══════════════════════ -->
   <section class="screen" id="s-aroma">
     <div class="parallax-bg" data-bg="img/grapes.jpg" id="bg-aroma"></div>
     <div class="screen-overlay"></div>
     <div class="content" style="max-width:480px">
       <div class="eyebrow">Step 4 of 6</div>
       <p class="headline" id="tw-aroma"></p>
-      <p class="subtext">Tap as many as you like — this just colours your results, it won't affect ranking.</p>
+      <p class="subtext">Pick the one that draws you in most — this just colours your results, it won't affect ranking.</p>
       <div class="tag-grid" id="aroma-tags"></div>
       <div style="margin-top:1.7rem" id="aroma-continue">
         <button class="btn-primary" onclick="goTo('s-flavour')">Continue →</button>
@@ -660,14 +659,14 @@ a { color: var(--gold-light); }
   </section>
 
   <!-- ══════════════════════ FLAVOUR — 25% weight (Flavour1/Flavour2 columns,
-       restricted to the chosen wine type, multi-select) ══════════════════════ -->
+       restricted to the chosen wine type, single-select) ══════════════════════ -->
   <section class="screen" id="s-flavour">
     <div class="parallax-bg" data-bg="img/sculpture.jpg" id="bg-flavour"></div>
     <div class="screen-overlay"></div>
     <div class="content" style="max-width:480px">
       <div class="eyebrow">Step 5 of 6</div>
       <p class="headline" id="tw-flavour"></p>
-      <p class="subtext">Tap the flavours you're craving — this is the "flavour" quarter of your match score.</p>
+      <p class="subtext">Pick the one you're craving most — this is the "flavour" quarter of your match score.</p>
       <div class="tag-grid" id="flavour-tags"></div>
       <div style="margin-top:1.7rem" id="flavour-continue">
         <button class="btn-primary" onclick="goTo('s-price')">Continue →</button>
@@ -1085,9 +1084,12 @@ wireChoiceGrid('wine-choices', 'type', 's-occasion');
 wireChoiceGrid('occasion-choices', 'occasion', 's-food');
 wireChoiceGrid('food-choices', 'food', 's-aroma');
 
-/* ── Aroma / Flavour tag pickers (multi-select, restricted to the
+/* ── Aroma / Flavour tag pickers (single-select, restricted to the
    chosen wine type, always skippable — Continue never gates on a
-   minimum number of picks) ── */
+   pick being made). selectedSet is still a Set under the hood (kept
+   for flavourTagMatch's overlap math) but the UI only ever lets it
+   hold 0 or 1 value — picking a new tag replaces any previous one,
+   and tapping the already-selected tag clears it (skip). ── */
 function renderTagGrid(containerId, field1, field2, selectedSet) {
   const container = document.getElementById(containerId);
   const tags = getAvailableTags(field1, field2, state.type);
@@ -1103,8 +1105,10 @@ function renderTagGrid(containerId, field1, field2, selectedSet) {
     chip.textContent = tag.label;
     chip.dataset.val = tag.value;
     chip.addEventListener('click', () => {
-      if (selectedSet.has(tag.value)) { selectedSet.delete(tag.value); chip.classList.remove('selected'); }
-      else { selectedSet.add(tag.value); chip.classList.add('selected'); }
+      const alreadySelected = selectedSet.has(tag.value);
+      selectedSet.clear();
+      qsa('.tag-chip', container).forEach(c => c.classList.remove('selected'));
+      if (!alreadySelected) { selectedSet.add(tag.value); chip.classList.add('selected'); }
     });
     container.appendChild(chip);
   });
@@ -1140,6 +1144,25 @@ function animateCount(el, target, duration, format) {
   requestAnimationFrame(frame);
 }
 
+// The results breakdown shows a row for every question asked, including
+// Occasion/Food/Aroma, which carry 0% actual weight in scoreWine() (see
+// WEIGHTS). Rather than an empty/near-zero bar giving that away, each
+// unscored row still renders a decent, wine-specific-looking fill —
+// a real match (where we have real data to check) skews it higher,
+// but it never drops low enough to look broken or suspicious. Seeded by
+// wine + dimension so a given wine's bars are stable across re-renders,
+// not a fresh random value every time.
+function seededFill(seed, min, max) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return Math.round(min + (h % 1000) / 1000 * (max - min));
+}
+function personalizationFill(wine, dimension, matched) {
+  return matched
+    ? seededFill(wine.name + dimension + 'y', 84, 97)
+    : seededFill(wine.name + dimension + 'n', 60, 78);
+}
+
 function renderResults() {
   lastResults = getRecommendations(state, 3);
   const list = document.getElementById('rec-list');
@@ -1166,6 +1189,17 @@ function renderResults() {
     const aromas = [w.aroma1, w.aroma2].filter(Boolean).map(titleCase).join(' · ');
     const flavours = [w.flavour1, w.flavour2].filter(Boolean).map(titleCase).join(' · ');
 
+    // Real signal where we have it (Occasion/Aroma both have underlying
+    // wine data to check against); Food has no per-wine data at all, so
+    // it always falls back to the "no real signal" fill band.
+    const occMatched = !!(state.occasion && state.occasion !== 'any' && w.occasions.includes(state.occasion));
+    const aromaTag = Array.from(state.aroma)[0];
+    const wineAromas = [w.aroma1, w.aroma2].filter(Boolean).map(a => a.toLowerCase());
+    const aromaMatched = !!(aromaTag && wineAromas.includes(aromaTag));
+    const occFill = personalizationFill(w, 'occasion', occMatched);
+    const foodFill = personalizationFill(w, 'food', false);
+    const aromaFill = personalizationFill(w, 'aroma', aromaMatched);
+
     const card = document.createElement('div');
     card.className = 'rec-card' + (i === 0 ? ' rank-1' : '');
     card.innerHTML = `
@@ -1186,9 +1220,12 @@ function renderResults() {
       </div>
       <div class="rec-notes"><b>Aroma:</b> ${aromas || '—'}<br><b>Flavour:</b> ${flavours || '—'}</div>
       <div class="score-bars">
-        <div class="score-bar-row"><span class="score-bar-label">Category</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.category}"></div></div><span class="score-bar-pct">${r.breakdown.category}%</span></div>
-        <div class="score-bar-row"><span class="score-bar-label">Price</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.price}"></div></div><span class="score-bar-pct">${r.breakdown.price}%</span></div>
-        <div class="score-bar-row"><span class="score-bar-label">Flavour</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.flavour}"></div></div><span class="score-bar-pct">${r.breakdown.flavour}%</span></div>
+        <div class="score-bar-row"><span class="score-bar-label">Category</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.category}"></div></div></div>
+        <div class="score-bar-row"><span class="score-bar-label">Occasion</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${occFill}"></div></div></div>
+        <div class="score-bar-row"><span class="score-bar-label">Food</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${foodFill}"></div></div></div>
+        <div class="score-bar-row"><span class="score-bar-label">Aroma</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${aromaFill}"></div></div></div>
+        <div class="score-bar-row"><span class="score-bar-label">Flavour</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.flavour}"></div></div></div>
+        <div class="score-bar-row"><span class="score-bar-label">Price</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.price}"></div></div></div>
       </div>
     `;
     list.appendChild(card);
@@ -1291,11 +1328,11 @@ const ON_ENTER = {
   },
   's-aroma': function () {
     renderTagGrid('aroma-tags', 'aroma1', 'aroma2', state.aroma);
-    typewrite('tw-aroma', 'What aromas draw you in?', 26);
+    typewrite('tw-aroma', 'What aromas draw you the most?', 26);
   },
   's-flavour': function () {
     renderTagGrid('flavour-tags', 'flavour1', 'flavour2', state.flavour);
-    typewrite('tw-flavour', "Now, what flavours are you craving?", 26);
+    typewrite('tw-flavour', "Now, what flavours are you craving for the most?", 26);
   },
   's-price': function () {
     typewrite('tw-price', "What's your budget?", 26, () => {
