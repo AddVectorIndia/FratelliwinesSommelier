@@ -11,45 +11,44 @@ intentionally not published here.
 
 ## What it does
 
-Landing page → 7-question quiz (wine type → occasion → food pairing →
-aroma → flavour → style → budget) → 3 ranked recommendations with a
-live match-score breakdown → optional email signup → thank-you screen.
-Dark wine/gold brand styling, animated screen transitions, Ken Burns
-backgrounds, typewriter copy, animated count-up match percentages and
-score bars.
+Landing page → 6-question quiz (wine type → occasion → food pairing →
+aroma → flavour → budget) → 3 ranked recommendations, each shown as a
+star rating (out of 5) with a match-score breakdown → optional email
+signup → thank-you screen. Dark wine/gold brand styling, animated
+screen transitions, Ken Burns backgrounds, typewriter copy, animated
+count-up stars and score bars.
 
-Occasion, food, aroma and style are all **skippable and unscored** —
-they shape the results-screen copy ("Curated for your Hosting evening,
+Occasion, food and aroma are all **skippable and unscored** — they
+shape the results-screen copy ("Curated for your Hosting evening,
 paired with Italian cuisine, with a nose of Vanilla & Cherry…") and the
 captured lead, but never affect ranking.
 
 ## Recommendation scoring
 
-Every wine is scored 0–100% as a weighted blend:
+Every wine is scored 0–100% as a weighted blend, then shown to the
+guest as a **star rating out of 5** (100% = 5.0 stars):
 
 | Weight | Signal | How it's matched |
 |---|---|---|
 | **50%** | Category (wine type) | Exact type match = full credit; "Surprise Me" = full credit for every type |
 | **25%** | Price | Exact band = full credit; an adjacent band = partial credit; "doesn't matter" = full credit |
-| **25%** | Flavour | Guest multi-selects real tasting notes (from the wine data's Flavour1/Flavour2 columns, e.g. "Apple", "Baked Spices" — *not* the Body/Fruit/Oak/Sweetness L/M/H scale); score = the fraction of that wine's own 1–2 flavour notes the guest picked. No picks = neutral 50%, never a penalty |
+| **25%** | Flavour | Guest multi-selects real tasting notes (from the wine data's Flavour1/Flavour2 columns, e.g. "Apple", "Baked Spices"); score = the fraction of that wine's own 1–2 flavour notes the guest picked. No picks = neutral 50%, never a penalty |
 
 The Flavour (and Aroma) picker only shows notes that actually occur on
 wines of the type the guest already chose in step 1, so a guest is
 never offered a note that can't possibly show up in their results.
 Choosing "Surprise Me" shows the full catalogue-wide list.
 
-**Everything else is unscored, personalization-only** — asked, shown in
-results copy, captured on the lead, zero ranking weight:
-- **Occasion** and **Food** (single-select, each with an explicit Skip)
-- **Aroma** (same restricted multi-select picker as Flavour, just never
-  fed into the score)
-- **Style** — the Body/Fruit/Oak/Sweetness L/M/H scale. Kept as a
-  question guests can still answer; the Flavour tag match above is
-  what actually earns the 25%.
+**Occasion, Food and Aroma are unscored, personalization-only** — asked,
+shown in results copy, captured on the lead, zero ranking weight. Each
+is skippable (Occasion/Food via an explicit "Skip" choice, Aroma by
+simply not tapping any tag).
 
 The exact formulas (`categoryMatch`, `priceMatch`, `flavourTagMatch`,
 `getAvailableTags`, `scoreWine`) are in the `<script>` block in
-`index.html` — search for "SCORING".
+`index.html` — search for "SCORING". The star display itself is just a
+presentation layer over the same 0–100 score (`score.pct / 20`); it
+doesn't change how wines are ranked.
 
 ## Lead capture — Fratelli Enquiry API
 
