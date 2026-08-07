@@ -41,8 +41,9 @@ Choosing "Surprise Me" shows the full catalogue-wide list. Both pickers
 are **single-select**, and — same as every other choice screen in the
 quiz (wine type/occasion/food/price) — tapping a note immediately
 selects it and auto-advances to the next screen; there's no separate
-Continue press. A "Skip →" link stays below the grid for guests who
-don't want to pick anything.
+Continue press. A "Skip" button styled identically to every other
+choice button in the quiz (`.choice-btn`, not a plain text link) stays
+below the grid for guests who don't want to pick anything.
 
 **Occasion, Food and Aroma are unscored, personalization-only** — asked,
 shown in results copy, captured on the lead, zero ranking weight. Each
@@ -57,21 +58,29 @@ doesn't change how wines are ranked.
 
 ### Results breakdown bars
 
-Each card shows one bar per question asked, split into two "wings":
-Category/Occasion/Food on the left (bars fill left→right, normal), and
-Aroma/Flavour/Price on the right (bars fill right→left, mirrored via
-`flex-direction: row-reverse` on `.score-bars-side.mirror`) — no
-percentage number, just the bar. Category/Flavour/Price show the
-*real* score component (Flavour can legitimately show an empty bar if
-the guest's pick doesn't match that wine at all). Occasion/Food/Aroma
-carry 0% actual weight, so rather than an empty bar giving that away,
-they render a deterministic, wine-specific "looks-decent" fill
-(`personalizationFill()` in `index.html`, seeded per wine+dimension so
-it's stable across re-renders, not fabricated fresh each time) — higher
-if there's a real match to check (Occasion against the wine's occasion
-list, Aroma against its aroma notes), always at least ~60% otherwise.
-Food has no per-wine data to check against at all, so it's always in
-that fallback band.
+Each card shows one bar per question asked, split into two equal-width
+"wings" (`.score-bars-side` / `.score-bars-side.mirror` — a `grid-
+template-columns: 1fr 1fr` container; the mirrored side keeps its rows
+`align-items: stretch` so both columns stay the same width, it only
+flips the label's text-align and the track's `flex-direction` to
+`row-reverse`): Category/Occasion/Food on the left (bars fill
+left→right, normal), and Aroma/Flavour/Price on the right (bars fill
+right→left) — no percentage number, just the bar.
+
+Category/Flavour/Price show the *real* score component (Flavour can
+legitimately show an empty bar if the guest's pick doesn't match that
+wine at all). Occasion/Food/Aroma carry 0% actual weight, so rather
+than an empty bar giving that away, they render a deterministic,
+wine-specific "looks-decent" fill (`personalizationFill()` in
+`index.html`, seeded per wine+dimension so it's stable across
+re-renders, not fabricated fresh each time) in the 78–90% range, or
+88–98% where there's a real match to check (Occasion against the
+wine's occasion list, Aroma against its aroma notes) — kept close to
+each other and both on the high end deliberately, since the real
+scored rows often land at a clean 100% and a floor that's merely
+"okay" (e.g. 60%) would still visibly stand out next to those. Food
+has no per-wine data to check against at all, so it's always in the
+lower (78–90%) band.
 
 ## Lead capture — Fratelli Enquiry API
 
@@ -106,6 +115,39 @@ The landing page silently calls [ipapi.co](https://ipapi.co)'s free
 JSON endpoint (`detectVisitorLocation()`) to greet visitors by city and
 to populate `SourceIP` above. Free tier is rate-limited; swap for a
 server-side lookup or a paid tier under sustained real traffic.
+
+## Dark / light theme
+
+Follows the visitor's OS/browser preference automatically
+(`prefers-color-scheme`) — no manual toggle. Every color in the
+stylesheet is a CSS custom property (`--bg`, `--text`, `--text-dim`,
+`--text-muted`, `--surface-*`, `--border-*`, `--track-*`, `--gold`,
+`--gold-light`, `--overlay-1/2`, …) defined once in `:root` for dark
+(the default) and re-defined under `@media (prefers-color-scheme:
+light)` — nothing else in the file references a literal color, so the
+whole site reskins from those two blocks alone.
+
+A few things are deliberately **not** theme-swapped:
+- `--ink` (near-black text sitting on a gold-filled element — buttons,
+  selected chips) stays fixed, since gold's brightness barely changes
+  between themes and dark text keeps working on it either way.
+- `--gold`/`--gold-light` *do* change (darkened for light mode — the
+  pale dark-mode gold reads at very low contrast against a light
+  background), but `--gold-dim`/`--gold-wash-*` (translucent gold used
+  for hover/selected washes) don't bother, since a translucent gold
+  tint reads fine as an accent on both a near-black and a near-white
+  surface.
+- `--overlay-1`/`--overlay-2` (the scrim over every photo background)
+  flip from a dark wash to a light one in light mode, paired with dark
+  `--text`, rather than just getting a little less dark — otherwise
+  light-mode text would still need to be pale to read on a dark scrim,
+  defeating the point.
+
+Verified via Chrome DevTools Protocol's `Emulation.setEmulatedMedia`
+(forces `prefers-color-scheme` without needing an actual OS-level
+toggle) across the full quiz in both themes — landing, a choice
+screen, the tag pickers, results, and signup all render with correct
+contrast and no leftover hardcoded colors.
 
 ## Signup fields
 

@@ -69,17 +69,47 @@ if (META_PIXEL_ID !== 'YOUR_PIXEL_ID') {
 html { -webkit-text-size-adjust: 100%; height: 100%; }
 
 :root {
-  --wine-black:  #080306;
-  --wine-dark:   #130810;
-  --wine-mid:    #5C1B2B;
-  --wine-accent: #8B2A3F;
+  /* Dark theme (default). Overridden under prefers-color-scheme:light
+     below — every rule in this file reads these tokens rather than a
+     literal color, so the whole site retheme comes from these two
+     blocks alone. */
+  --bg:          #080306;
+  --text:        #F4EAD8;
+  --text-dim:    rgba(244,234,216,0.62);
+  --text-muted:  #9A8A72;
+
+  --surface-1:     rgba(244,234,216,0.04);
+  --surface-1-end: rgba(244,234,216,0.02);
+  --surface-2:     rgba(244,234,216,0.05);
+
+  --border-1: rgba(244,234,216,0.14);
+  --border-2: rgba(244,234,216,0.16);
+  --border-3: rgba(244,234,216,0.18);
+  --border-4: rgba(244,234,216,0.12);
+
+  --track-1: rgba(244,234,216,0.1);
+  --track-2: rgba(244,234,216,0.15);
+  --track-3: rgba(244,234,216,0.2);
+
   --gold:        #C4973E;
   --gold-light:  #E8C87A;
   --gold-dim:    rgba(196,151,62,0.25);
-  --cream:       #F4EAD8;
-  --cream-dim:   rgba(244,234,216,0.62);
-  --cream-muted: #9A8A72;
-  --danger:      #E8846A;
+  --gold-wash-1: rgba(196,151,62,0.06);
+  --gold-wash-2: rgba(196,151,62,0.08);
+  --gold-wash-3: rgba(196,151,62,0.16);
+  --gold-shadow: rgba(196,151,62,0.55);
+
+  /* Text sitting ON a gold-filled element (buttons, selected chips).
+     Gold is roughly the same brightness in both themes, so this stays
+     fixed rather than living in the light override below. */
+  --ink: #080306;
+  --danger: #E8846A;
+
+  /* The scrim over every photo background, so text reads regardless of
+     the photo's own brightness. Flips to a light wash in light mode
+     (paired with dark --text) rather than just getting less dark. */
+  --overlay-1: rgba(8,3,6,.55);
+  --overlay-2: rgba(8,3,6,.72);
 
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body: 'Raleway', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -87,9 +117,41 @@ html { -webkit-text-size-adjust: 100%; height: 100%; }
   --ease: cubic-bezier(.22,.9,.32,1);
 }
 
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg:         #FBF5EA;
+    --text:       #2A1116;
+    --text-dim:   rgba(42,17,22,0.68);
+    --text-muted: #7C6952;
+
+    --surface-1:     rgba(42,17,22,0.035);
+    --surface-1-end: rgba(42,17,22,0.015);
+    --surface-2:     rgba(42,17,22,0.045);
+
+    --border-1: rgba(42,17,22,0.14);
+    --border-2: rgba(42,17,22,0.17);
+    --border-3: rgba(42,17,22,0.2);
+    --border-4: rgba(42,17,22,0.12);
+
+    --track-1: rgba(42,17,22,0.1);
+    --track-2: rgba(42,17,22,0.15);
+    --track-3: rgba(42,17,22,0.22);
+
+    /* Darkened from the dark-theme gold so both still clear WCAG AA
+       against their respective backgrounds — the pale dark-mode gold
+       would wash out against a light background. */
+    --gold:       #9A6B22;
+    --gold-light: #7E541B;
+    --gold-dim:   rgba(154,107,34,0.3);
+
+    --overlay-1: rgba(251,245,234,.6);
+    --overlay-2: rgba(251,245,234,.82);
+  }
+}
+
 body {
-  background: var(--wine-black);
-  color: var(--cream);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-body);
   font-weight: 300;
   line-height: 1.55;
@@ -101,7 +163,7 @@ button { font-family: inherit; cursor: pointer; }
 input { font-family: inherit; }
 a { color: var(--gold-light); }
 
-::selection { background: var(--gold); color: var(--wine-black); }
+::selection { background: var(--gold); color: var(--ink); }
 
 /* Subtle scrollbar for screens that scroll on small phones (tag
    pickers, results) so it doesn't look jarring. */
@@ -172,7 +234,7 @@ a { color: var(--gold-light); }
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(8,3,6,.55) 0%, rgba(8,3,6,.72) 55%, var(--wine-black) 100%);
+    linear-gradient(180deg, var(--overlay-1) 0%, var(--overlay-2) 55%, var(--bg) 100%);
 }
 
 .content {
@@ -205,7 +267,7 @@ a { color: var(--gold-light); }
   font-family: var(--font-display);
   font-size: clamp(1.7rem, 6vw, 2.3rem);
   letter-spacing: 0.03em;
-  color: var(--cream);
+  color: var(--text);
 }
 .brand-sub {
   font-family: var(--font-body);
@@ -233,12 +295,12 @@ a { color: var(--gold-light); }
   font-family: var(--font-display);
   font-size: clamp(1.25rem, 4.4vw, 1.7rem);
   font-weight: 500;
-  color: var(--cream);
+  color: var(--text);
   min-height: 1.4em;
 }
 .subtext {
   font-size: 0.86rem;
-  color: var(--cream-dim);
+  color: var(--text-dim);
   max-width: 34ch;
   margin: 0 auto;
 }
@@ -274,7 +336,7 @@ a { color: var(--gold-light); }
 .progress .dot {
   width: 6px; height: 6px;
   border-radius: 50%;
-  background: rgba(244,234,216,0.2);
+  background: var(--track-3);
   transition: background .35s ease, transform .35s ease;
 }
 .progress .dot.done { background: var(--gold); }
@@ -285,14 +347,14 @@ a { color: var(--gold-light); }
 ════════════════════════════════════════════════════════════════ */
 .btn-primary {
   background: linear-gradient(135deg, var(--gold), #A97F32);
-  color: var(--wine-black);
+  color: var(--ink);
   border: none;
   padding: 0.85rem 1.9rem;
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   border-radius: 2px;
-  box-shadow: 0 8px 24px -8px rgba(196,151,62,0.55);
+  box-shadow: 0 8px 24px -8px var(--gold-shadow);
   transition: transform .25s var(--ease), box-shadow .25s var(--ease), filter .25s;
 }
 .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.06); }
@@ -302,18 +364,18 @@ a { color: var(--gold-light); }
 .btn-ghost {
   background: transparent;
   border: 1px solid var(--gold-dim);
-  color: var(--cream);
+  color: var(--text);
   padding: 0.8rem 1.7rem;
   font-size: 0.82rem;
   letter-spacing: 0.05em;
   border-radius: 2px;
   transition: border-color .25s, background .25s;
 }
-.btn-ghost:hover { border-color: var(--gold); background: rgba(196,151,62,0.08); }
+.btn-ghost:hover { border-color: var(--gold); background: var(--gold-wash-2); }
 
 .btn-link {
   background: none; border: none;
-  color: var(--cream-muted);
+  color: var(--text-muted);
   font-size: 0.78rem;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -337,9 +399,9 @@ a { color: var(--gold-light); }
 .choice-grid .span-2 { grid-column: 1 / -1; }
 
 .choice-btn {
-  background: rgba(244,234,216,0.04);
-  border: 1px solid rgba(244,234,216,0.14);
-  color: var(--cream);
+  background: var(--surface-1);
+  border: 1px solid var(--border-1);
+  color: var(--text);
   border-radius: 4px;
   padding: 0.95rem 0.6rem;
   font-size: 0.82rem;
@@ -348,10 +410,10 @@ a { color: var(--gold-light); }
   transition: border-color .2s, background .2s, transform .15s;
 }
 .choice-btn .icon { font-size: 1.35rem; }
-.choice-btn:hover { border-color: var(--gold-dim); background: rgba(196,151,62,0.08); }
+.choice-btn:hover { border-color: var(--gold-dim); background: var(--gold-wash-2); }
 .choice-btn.selected {
   border-color: var(--gold);
-  background: rgba(196,151,62,0.16);
+  background: var(--gold-wash-3);
   transform: scale(1.03);
 }
 
@@ -365,9 +427,9 @@ a { color: var(--gold-light); }
   width: 100%; margin-top: 1.4rem;
 }
 .tag-chip {
-  background: rgba(244,234,216,0.04);
-  border: 1px solid rgba(244,234,216,0.16);
-  color: var(--cream);
+  background: var(--surface-1);
+  border: 1px solid var(--border-2);
+  color: var(--text);
   border-radius: 999px;
   padding: 0.5rem 0.95rem;
   font-size: 0.76rem;
@@ -377,11 +439,11 @@ a { color: var(--gold-light); }
 .tag-chip.selected {
   border-color: var(--gold);
   background: var(--gold);
-  color: var(--wine-black);
+  color: var(--ink);
   font-weight: 600;
   transform: scale(1.04);
 }
-.tag-empty { font-size: 0.8rem; color: var(--cream-muted); font-style: italic; }
+.tag-empty { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
 
 /* ═══════════════════════════════════════════════════════════════
    PRICE GRID
@@ -395,16 +457,16 @@ a { color: var(--gold-light); }
 .price-grid.visible { opacity: 1; transform: translateY(0); }
 .price-btn {
   display: flex; align-items: center; justify-content: space-between;
-  background: rgba(244,234,216,0.04);
-  border: 1px solid rgba(244,234,216,0.14);
-  color: var(--cream);
+  background: var(--surface-1);
+  border: 1px solid var(--border-1);
+  color: var(--text);
   border-radius: 4px;
   padding: 0.85rem 1.1rem;
   font-size: 0.86rem;
   transition: border-color .2s, background .2s;
 }
 .price-btn:hover { border-color: var(--gold-dim); }
-.price-btn.selected { border-color: var(--gold); background: rgba(196,151,62,0.16); }
+.price-btn.selected { border-color: var(--gold); background: var(--gold-wash-3); }
 .price-btn .tag { color: var(--gold-light); font-family: var(--font-display); font-style: italic; }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -415,8 +477,8 @@ a { color: var(--gold-light); }
 .rec-card {
   position: relative;
   text-align: left;
-  background: linear-gradient(160deg, rgba(244,234,216,0.05), rgba(244,234,216,0.02));
-  border: 1px solid rgba(244,234,216,0.14);
+  background: linear-gradient(160deg, var(--surface-2), var(--surface-1-end));
+  border: 1px solid var(--border-1);
   border-radius: 6px;
   padding: 1.1rem 1.1rem 1.15rem;
   opacity: 0;
@@ -433,11 +495,11 @@ a { color: var(--gold-light); }
   font-style: italic; font-size: 0.75rem; color: var(--gold);
   letter-spacing: 0.08em; text-transform: uppercase;
 }
-.rec-name { font-family: var(--font-display); font-size: 1.25rem; color: var(--cream); margin-top: 0.15rem; }
-.rec-meta { font-size: 0.72rem; color: var(--cream-muted); margin-top: 0.2rem; }
+.rec-name { font-family: var(--font-display); font-size: 1.25rem; color: var(--text); margin-top: 0.15rem; }
+.rec-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem; }
 
 .rec-match { text-align: right; flex-shrink: 0; }
-.rec-match .lbl { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cream-muted); margin-top: 0.3rem; }
+.rec-match .lbl { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-top: 0.3rem; }
 
 /* 5-star rating — a muted "empty" row with a gold "filled" row
    layered on top, clipped to width via animated %, so the fill can
@@ -449,7 +511,7 @@ a { color: var(--gold-light); }
   line-height: 1;
   letter-spacing: 0.1rem;
 }
-.stars-bg { color: rgba(244,234,216,0.15); white-space: nowrap; }
+.stars-bg { color: var(--track-2); white-space: nowrap; }
 .stars-fg {
   position: absolute; top: 0; left: 0;
   width: 0%; overflow: hidden; white-space: nowrap;
@@ -461,7 +523,7 @@ a { color: var(--gold-light); }
   line-height: 1; margin-top: 0.3rem;
 }
 
-.rec-notes { font-size: 0.8rem; color: var(--cream-dim); margin-top: 0.6rem; }
+.rec-notes { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.6rem; }
 .rec-notes b { color: var(--gold-light); font-weight: 500; }
 
 /* Two columns of 3 stats each: left column's bars fill left→right
@@ -471,11 +533,11 @@ a { color: var(--gold-light); }
 .score-bars-side { display: flex; flex-direction: column; gap: 0.55rem; }
 .score-bar-row { display: flex; flex-direction: column; gap: 0.3rem; }
 .score-bar-label {
-  font-size: 0.58rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--cream-muted);
+  font-size: 0.58rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted);
 }
 .score-bar-track {
   display: flex; height: 5px; border-radius: 99px;
-  background: rgba(244,234,216,0.1); overflow: hidden;
+  background: var(--track-1); overflow: hidden;
 }
 .score-bar-fill {
   height: 100%; border-radius: 99px; width: 0%;
@@ -483,10 +545,14 @@ a { color: var(--gold-light); }
   transition: width 1s var(--ease);
 }
 
-.score-bars-side.mirror { align-items: flex-end; }
-.score-bars-side.mirror .score-bar-row { align-items: flex-end; }
+/* Mirrored side: rows/tracks must stay stretched to the FULL column
+   width (align-items default is already stretch) — only the label
+   text and the fill's growth direction actually flip. An earlier
+   version set align-items:flex-end here, which shrank each row to its
+   own content width instead of the column's, throwing off the two
+   columns' widths relative to each other. */
 .score-bars-side.mirror .score-bar-label { text-align: right; }
-.score-bars-side.mirror .score-bar-track { flex-direction: row-reverse; width: 100%; }
+.score-bars-side.mirror .score-bar-track { flex-direction: row-reverse; }
 .score-bars-side.mirror .score-bar-fill { background: linear-gradient(270deg, var(--gold), var(--gold-light)); }
 
 .results-actions {
@@ -500,20 +566,20 @@ a { color: var(--gold-light); }
 .field { width: 100%; margin-top: 1rem; text-align: left; }
 .field label {
   display: block; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--cream-muted); margin-bottom: 0.35rem;
+  color: var(--text-muted); margin-bottom: 0.35rem;
 }
-.field label .opt { text-transform: none; letter-spacing: 0; color: var(--cream-muted); opacity: 0.7; }
+.field label .opt { text-transform: none; letter-spacing: 0; color: var(--text-muted); opacity: 0.7; }
 .field input {
   width: 100%;
-  background: rgba(244,234,216,0.05);
-  border: 1px solid rgba(244,234,216,0.18);
-  color: var(--cream);
+  background: var(--surface-2);
+  border: 1px solid var(--border-3);
+  color: var(--text);
   border-radius: 4px;
   padding: 0.75rem 0.85rem;
   font-size: 0.9rem;
   transition: border-color .2s, background .2s;
 }
-.field input:focus { outline: none; border-color: var(--gold); background: rgba(196,151,62,0.06); }
+.field input:focus { outline: none; border-color: var(--gold); background: var(--gold-wash-1); }
 .field input.error { border-color: var(--danger); }
 .field-error {
   font-size: 0.7rem; color: var(--danger); margin-top: 0.3rem; min-height: 1em;
@@ -521,8 +587,8 @@ a { color: var(--gold-light); }
 
 .location-badge {
   display: inline-flex; align-items: center; gap: 0.35rem;
-  font-size: 0.7rem; color: var(--cream-muted);
-  border: 1px solid rgba(244,234,216,0.12);
+  font-size: 0.7rem; color: var(--text-muted);
+  border: 1px solid var(--border-4);
   border-radius: 999px; padding: 0.3rem 0.7rem;
   margin-top: 0.9rem;
   opacity: 0; transform: translateY(4px);
@@ -540,7 +606,7 @@ a { color: var(--gold-light); }
 }
 @keyframes pop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-.hint { font-size: 0.68rem; color: var(--cream-muted); margin-top: 0.4rem; }
+.hint { font-size: 0.68rem; color: var(--text-muted); margin-top: 0.4rem; }
 
 /* ═══════════════════════════════════════════════════════════════
    MISC
@@ -661,8 +727,8 @@ a { color: var(--gold-light); }
       <p class="headline" id="tw-aroma"></p>
       <p class="subtext">Pick the one that draws you in most — this just colours your results, it won't affect ranking.</p>
       <div class="tag-grid" id="aroma-tags"></div>
-      <div style="margin-top:1.7rem" id="aroma-continue">
-        <button class="btn-link" onclick="goTo('s-flavour')">Skip →</button>
+      <div style="margin-top:1.7rem;display:flex;justify-content:center" id="aroma-continue">
+        <button class="choice-btn" style="flex-direction:row;gap:0.5rem;padding:0.75rem 1.4rem" onclick="goTo('s-flavour')"><span class="icon" style="font-size:1rem">✦</span>Skip</button>
       </div>
     </div>
   </section>
@@ -677,8 +743,8 @@ a { color: var(--gold-light); }
       <p class="headline" id="tw-flavour"></p>
       <p class="subtext">Pick the one you're craving most — this is the "flavour" quarter of your match score.</p>
       <div class="tag-grid" id="flavour-tags"></div>
-      <div style="margin-top:1.7rem" id="flavour-continue">
-        <button class="btn-link" onclick="goTo('s-price')">Skip →</button>
+      <div style="margin-top:1.7rem;display:flex;justify-content:center" id="flavour-continue">
+        <button class="choice-btn" style="flex-direction:row;gap:0.5rem;padding:0.75rem 1.4rem" onclick="goTo('s-price')"><span class="icon" style="font-size:1rem">✦</span>Skip</button>
       </div>
     </div>
   </section>
@@ -1170,9 +1236,13 @@ function seededFill(seed, min, max) {
   return Math.round(min + (h % 1000) / 1000 * (max - min));
 }
 function personalizationFill(wine, dimension, matched) {
+  // Kept close together and both on the high end — the real scored
+  // rows (Category/Price especially) often land at a clean 100%, and
+  // an unscored row sitting noticeably shorter than that would be
+  // exactly the "this one doesn't really count" tell we're avoiding.
   return matched
-    ? seededFill(wine.name + dimension + 'y', 84, 97)
-    : seededFill(wine.name + dimension + 'n', 60, 78);
+    ? seededFill(wine.name + dimension + 'y', 88, 98)
+    : seededFill(wine.name + dimension + 'n', 78, 90);
 }
 
 function renderResults() {
