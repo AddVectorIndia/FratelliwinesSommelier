@@ -169,14 +169,16 @@ pixel-identical (padding, font-size, layout direction, colors) to
 every other `.choice-btn` in the quiz.
 
 **Card surfaces are deliberately translucent in both themes**
-(`--surface-1/1-end/2` sit around 2–5% alpha — a dark tint in light
+(`--surface-1/1-end/2` sit around 1–5% alpha — a dark tint in light
 theme, a light tint in dark theme) — a solid card would read as a flat
 paper cutout against the photo behind it; the barely-there tint is
-what gives it the "glass over the photo" look both themes share. This
-briefly went to ~88–92% opaque in light theme as a workaround for the
+what gives it the "glass over the photo" look both themes share. Light
+theme's tint briefly went to ~88–92% opaque as a workaround for the
 dark-band bug below, before the actual scroll bug was found and fixed
-at the source — it's back to matching dark theme's translucency now
-that the real cause is gone.
+at the source, and even after reverting toward the original ~3.5%
+value it still read as a slightly whitish, too-solid block against the
+photo — currently at ~1.8–2.2%, near-invisible on its own and only
+really visible via the border + text contrast.
 
 **Aroma/Flavour tag chips (`.tag-chip`) use the exact same tokens as
 `.choice-btn`** (background, border, border-radius, hover/selected
@@ -210,20 +212,25 @@ recommendation card. Keeping the scroll on `.content` instead means
 the background/overlay always stay pinned behind the full 900px
 viewport no matter how far the content itself has scrolled.
 
-## Selected-button spacing (`.choice-btn`/`.tag-chip`)
+## Selected buttons don't scale (`.choice-btn`/`.tag-chip`)
 
-Both `.choice-btn.selected` and `.tag-chip.selected` scale up
-(`transform: scale(1.03)`) on selection. `transform` doesn't affect
-grid/flex layout, so the scaled-up box visually grows past its own
-cell into the gap — and since neither had a `z-index`, a plain sibling
-that comes *after* it in the DOM (e.g. the next grid cell in the same
-row) still painted on top of that overflow by source order, making the
+`.choice-btn.selected` and `.tag-chip.selected` used to also
+`transform: scale(1.03)` on selection. `transform` doesn't affect
+grid/flex layout, so the scaled-up box visually grew past its own cell
+into the gap — and since neither had a `z-index`, a plain sibling that
+comes *after* it in the DOM (e.g. the next grid cell in the same row)
+still painted on top of that overflow by source order, making the
 selected button appear to dip *behind* its neighbor right at the
-moment it's picked. Fixed two ways: `.choice-grid`'s gap went from
-`0.7rem` → `0.85rem` and `.tag-grid`'s from `0.5rem` → `0.65rem` for
-more breathing room, and both `.selected` rules now set
-`position: relative; z-index: 2` so the selected item always paints
-above every sibling regardless of geometry or viewport width.
+moment it's picked. First fix attempt widened the grid gaps and added
+`z-index`, which reduced but didn't fully eliminate it at every
+viewport width. Current fix drops the scale transform entirely —
+selection is border-color + background only, the same same-footprint
+treatment `.price-btn.selected` already used without ever having this
+problem — so there's no growth to spill into a neighbor in the first
+place, regardless of gap size or viewport. `.choice-grid`'s gap
+(`0.85rem`) and `.tag-grid`'s (`0.65rem`) stay at their widened values
+for general breathing room, they just aren't load-bearing for this
+fix anymore.
 
 ## Signup fields
 
