@@ -464,14 +464,17 @@ a { color: var(--gold-light); }
 .rec-notes { font-size: 0.8rem; color: var(--cream-dim); margin-top: 0.6rem; }
 .rec-notes b { color: var(--gold-light); font-weight: 500; }
 
-.score-bars { margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.3rem; }
-.score-bar-row { display: flex; align-items: center; gap: 0.55rem; }
+/* Two columns of 3 stats each: left column's bars fill left→right
+   (normal), right column's fill right→left (mirrored) — a "wings"
+   layout rather than one long stacked list. */
+.score-bars { margin-top: 0.85rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+.score-bars-side { display: flex; flex-direction: column; gap: 0.55rem; }
+.score-bar-row { display: flex; flex-direction: column; gap: 0.3rem; }
 .score-bar-label {
-  width: 58px; flex-shrink: 0;
-  font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--cream-muted);
+  font-size: 0.58rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--cream-muted);
 }
 .score-bar-track {
-  flex: 1; height: 5px; border-radius: 99px;
+  display: flex; height: 5px; border-radius: 99px;
   background: rgba(244,234,216,0.1); overflow: hidden;
 }
 .score-bar-fill {
@@ -479,6 +482,12 @@ a { color: var(--gold-light); }
   background: linear-gradient(90deg, var(--gold), var(--gold-light));
   transition: width 1s var(--ease);
 }
+
+.score-bars-side.mirror { align-items: flex-end; }
+.score-bars-side.mirror .score-bar-row { align-items: flex-end; }
+.score-bars-side.mirror .score-bar-label { text-align: right; }
+.score-bars-side.mirror .score-bar-track { flex-direction: row-reverse; width: 100%; }
+.score-bars-side.mirror .score-bar-fill { background: linear-gradient(270deg, var(--gold), var(--gold-light)); }
 
 .results-actions {
   display: flex; flex-direction: column; align-items: center; gap: 0.7rem;
@@ -653,7 +662,7 @@ a { color: var(--gold-light); }
       <p class="subtext">Pick the one that draws you in most — this just colours your results, it won't affect ranking.</p>
       <div class="tag-grid" id="aroma-tags"></div>
       <div style="margin-top:1.7rem" id="aroma-continue">
-        <button class="btn-primary" onclick="goTo('s-flavour')">Continue →</button>
+        <button class="btn-link" onclick="goTo('s-flavour')">Skip →</button>
       </div>
     </div>
   </section>
@@ -669,7 +678,7 @@ a { color: var(--gold-light); }
       <p class="subtext">Pick the one you're craving most — this is the "flavour" quarter of your match score.</p>
       <div class="tag-grid" id="flavour-tags"></div>
       <div style="margin-top:1.7rem" id="flavour-continue">
-        <button class="btn-primary" onclick="goTo('s-price')">Continue →</button>
+        <button class="btn-link" onclick="goTo('s-price')">Skip →</button>
       </div>
     </div>
   </section>
@@ -1085,17 +1094,19 @@ wireChoiceGrid('occasion-choices', 'occasion', 's-food');
 wireChoiceGrid('food-choices', 'food', 's-aroma');
 
 /* ── Aroma / Flavour tag pickers (single-select, restricted to the
-   chosen wine type, always skippable — Continue never gates on a
-   pick being made). selectedSet is still a Set under the hood (kept
-   for flavourTagMatch's overlap math) but the UI only ever lets it
-   hold 0 or 1 value — picking a new tag replaces any previous one,
-   and tapping the already-selected tag clears it (skip). ── */
-function renderTagGrid(containerId, field1, field2, selectedSet) {
+   chosen wine type, skippable via the "Skip →" link below the grid).
+   selectedSet is still a Set under the hood (kept for
+   flavourTagMatch's overlap math) but the UI only ever lets it hold 0
+   or 1 value. Tapping a tag selects it and auto-advances to the next
+   screen immediately — same tap-to-commit behaviour as every other
+   single-select screen in the quiz (wine type/occasion/food/price) —
+   rather than requiring a separate Continue press. ── */
+function renderTagGrid(containerId, field1, field2, selectedSet, nextScreen) {
   const container = document.getElementById(containerId);
   const tags = getAvailableTags(field1, field2, state.type);
   container.innerHTML = '';
   if (tags.length === 0) {
-    container.innerHTML = '<span class="tag-empty">No notes on file for this selection — hit Continue.</span>';
+    container.innerHTML = '<span class="tag-empty">No notes on file for this selection — hit Skip.</span>';
     return;
   }
   tags.forEach(tag => {
@@ -1105,10 +1116,11 @@ function renderTagGrid(containerId, field1, field2, selectedSet) {
     chip.textContent = tag.label;
     chip.dataset.val = tag.value;
     chip.addEventListener('click', () => {
-      const alreadySelected = selectedSet.has(tag.value);
       selectedSet.clear();
+      selectedSet.add(tag.value);
       qsa('.tag-chip', container).forEach(c => c.classList.remove('selected'));
-      if (!alreadySelected) { selectedSet.add(tag.value); chip.classList.add('selected'); }
+      chip.classList.add('selected');
+      setTimeout(() => goTo(nextScreen), 480);
     });
     container.appendChild(chip);
   });
@@ -1220,12 +1232,16 @@ function renderResults() {
       </div>
       <div class="rec-notes"><b>Aroma:</b> ${aromas || '—'}<br><b>Flavour:</b> ${flavours || '—'}</div>
       <div class="score-bars">
-        <div class="score-bar-row"><span class="score-bar-label">Category</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.category}"></div></div></div>
-        <div class="score-bar-row"><span class="score-bar-label">Occasion</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${occFill}"></div></div></div>
-        <div class="score-bar-row"><span class="score-bar-label">Food</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${foodFill}"></div></div></div>
-        <div class="score-bar-row"><span class="score-bar-label">Aroma</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${aromaFill}"></div></div></div>
-        <div class="score-bar-row"><span class="score-bar-label">Flavour</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.flavour}"></div></div></div>
-        <div class="score-bar-row"><span class="score-bar-label">Price</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.price}"></div></div></div>
+        <div class="score-bars-side">
+          <div class="score-bar-row"><span class="score-bar-label">Category</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.category}"></div></div></div>
+          <div class="score-bar-row"><span class="score-bar-label">Occasion</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${occFill}"></div></div></div>
+          <div class="score-bar-row"><span class="score-bar-label">Food</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${foodFill}"></div></div></div>
+        </div>
+        <div class="score-bars-side mirror">
+          <div class="score-bar-row"><span class="score-bar-label">Aroma</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${aromaFill}"></div></div></div>
+          <div class="score-bar-row"><span class="score-bar-label">Flavour</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.flavour}"></div></div></div>
+          <div class="score-bar-row"><span class="score-bar-label">Price</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.price}"></div></div></div>
+        </div>
       </div>
     `;
     list.appendChild(card);
@@ -1327,11 +1343,11 @@ const ON_ENTER = {
     });
   },
   's-aroma': function () {
-    renderTagGrid('aroma-tags', 'aroma1', 'aroma2', state.aroma);
+    renderTagGrid('aroma-tags', 'aroma1', 'aroma2', state.aroma, 's-flavour');
     typewrite('tw-aroma', 'What aromas draw you the most?', 26);
   },
   's-flavour': function () {
-    renderTagGrid('flavour-tags', 'flavour1', 'flavour2', state.flavour);
+    renderTagGrid('flavour-tags', 'flavour1', 'flavour2', state.flavour, 's-price');
     typewrite('tw-flavour', "Now, what flavours are you craving for the most?", 26);
   },
   's-price': function () {

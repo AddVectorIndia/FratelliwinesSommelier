@@ -38,13 +38,16 @@ The Flavour (and Aroma) picker only shows notes that actually occur on
 wines of the type the guest already chose in step 1, so a guest is
 never offered a note that can't possibly show up in their results.
 Choosing "Surprise Me" shows the full catalogue-wide list. Both pickers
-are **single-select** — picking a new note replaces the previous pick;
-tapping the selected note again clears it (same as skipping).
+are **single-select**, and — same as every other choice screen in the
+quiz (wine type/occasion/food/price) — tapping a note immediately
+selects it and auto-advances to the next screen; there's no separate
+Continue press. A "Skip →" link stays below the grid for guests who
+don't want to pick anything.
 
 **Occasion, Food and Aroma are unscored, personalization-only** — asked,
 shown in results copy, captured on the lead, zero ranking weight. Each
 is skippable (Occasion/Food via an explicit "Skip" choice, Aroma by
-simply not tapping any note).
+just not tapping a note before hitting "Skip →").
 
 The exact formulas (`categoryMatch`, `priceMatch`, `flavourTagMatch`,
 `getAvailableTags`, `scoreWine`) are in the `<script>` block in
@@ -54,13 +57,15 @@ doesn't change how wines are ranked.
 
 ### Results breakdown bars
 
-Each card shows one bar per question asked, in the order they were
-asked: Category, Occasion, Food, Aroma, Flavour, Price — no percentage
-number, just the bar. Category/Flavour/Price show the *real* score
-component (Flavour can legitimately show an empty bar if the guest's
-pick doesn't match that wine at all). Occasion/Food/Aroma carry 0%
-actual weight, so rather than an empty bar giving that away, they
-render a deterministic, wine-specific "looks-decent" fill
+Each card shows one bar per question asked, split into two "wings":
+Category/Occasion/Food on the left (bars fill left→right, normal), and
+Aroma/Flavour/Price on the right (bars fill right→left, mirrored via
+`flex-direction: row-reverse` on `.score-bars-side.mirror`) — no
+percentage number, just the bar. Category/Flavour/Price show the
+*real* score component (Flavour can legitimately show an empty bar if
+the guest's pick doesn't match that wine at all). Occasion/Food/Aroma
+carry 0% actual weight, so rather than an empty bar giving that away,
+they render a deterministic, wine-specific "looks-decent" fill
 (`personalizationFill()` in `index.html`, seeded per wine+dimension so
 it's stable across re-renders, not fabricated fresh each time) — higher
 if there's a real match to check (Occasion against the wine's occasion
