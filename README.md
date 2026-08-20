@@ -195,6 +195,30 @@ these read fine as an accent on both a near-black and a near-white
 surface, only the *solid* `--gold`/`--gold-light` needed darkening for
 light-mode contrast).
 
+**The Club Fratelli (signup) screen gets its own stronger overlay.**
+Its heading/labels sit higher up `vineyard.jpg` than most screens'
+content — right over a bright open-sky patch the shared gradient
+(`--overlay-1` at the top, fading to `--overlay-2`) doesn't reliably
+darken enough, most visible in dark theme where light text lost
+contrast against that patch. `#s-signup .screen-overlay` overrides the
+gradient to start at the darker `--overlay-2` immediately rather than
+easing in from `--overlay-1`; a `--text-scrim` text-shadow (a black
+halo in dark theme, white in light theme) on the eyebrow/headline/
+subtext/first field label backs it up as a second layer, so legibility
+doesn't depend on getting the overlay tuning exactly right for every
+possible photo underneath.
+
+**The landing page's brand mark is the real Fratelli monogram**, not a
+placeholder. `img/logo.png` — the "F" + vine leaves + grape cluster
+icon cropped out of fratelliwines.in's own footer logo (`Footer_logo.png`
+on their Shopify CDN) and recolored solid to this site's gold accent
+(`#C4973E`, dark theme's `--gold`) — replaces the old plain-text "F"
+in a circle. It's used as-is across both themes (a fixed gold rather
+than swapping per-theme like `--gold` does) since it always sits over
+a photo + overlay, never directly on the flat `--bg` color, so the
+small light/dark-theme gold difference isn't worth two separate
+recolored assets.
+
 Verified via Chrome DevTools Protocol's `Emulation.setEmulatedMedia`
 (forces `prefers-color-scheme` without an actual OS-level toggle)
 across the full quiz in both themes, plus the manual toggle itself:

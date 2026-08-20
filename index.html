@@ -110,6 +110,12 @@ html { -webkit-text-size-adjust: 100%; height: 100%; }
      (paired with dark --text) rather than just getting less dark. */
   --overlay-1: rgba(8,3,6,.55);
   --overlay-2: rgba(8,3,6,.72);
+  /* A per-glyph fallback for spots the overlay gradient alone doesn't
+     reliably darken enough (e.g. a bright sky patch in vineyard.jpg
+     sitting right behind the Club Fratelli heading) — a text-shadow
+     halo that recedes light text into the background regardless of
+     what's directly behind a given letter. */
+  --text-scrim: rgba(0,0,0,.55);
 
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body: 'Raleway', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -163,6 +169,7 @@ html { -webkit-text-size-adjust: 100%; height: 100%; }
 
     --overlay-1: rgba(251,245,234,.6);
     --overlay-2: rgba(251,245,234,.82);
+    --text-scrim: rgba(255,255,255,.55);
   }
 }
 
@@ -186,6 +193,7 @@ html { -webkit-text-size-adjust: 100%; height: 100%; }
   --gold-dim:   rgba(154,107,34,0.3);
   --overlay-1: rgba(251,245,234,.6);
   --overlay-2: rgba(251,245,234,.82);
+  --text-scrim: rgba(255,255,255,.55);
 }
 
 /* Explicit dark override so a guest whose OS reports light can still
@@ -199,6 +207,7 @@ html { -webkit-text-size-adjust: 100%; height: 100%; }
   --track-1: rgba(244,234,216,0.1); --track-2: rgba(244,234,216,0.15); --track-3: rgba(244,234,216,0.2);
   --gold: #C4973E; --gold-light: #E8C87A; --gold-dim: rgba(196,151,62,0.25);
   --overlay-1: rgba(8,3,6,.55); --overlay-2: rgba(8,3,6,.72);
+  --text-scrim: rgba(0,0,0,.55);
 }
 
 body {
@@ -306,6 +315,15 @@ a { color: var(--gold-light); }
   background:
     linear-gradient(180deg, var(--overlay-1) 0%, var(--overlay-2) 55%, var(--bg) 100%);
 }
+/* Club Fratelli's heading/labels sit higher up the gradient (closer to
+   --overlay-1, the lightest stop) than most screens' content, right
+   over a bright open-sky patch of vineyard.jpg — starting the
+   gradient at the darker --overlay-2 instead gives that whole upper
+   region reliable contrast, on top of the text-shadow scrim above. */
+#s-signup .screen-overlay {
+  background:
+    linear-gradient(180deg, var(--overlay-2) 0%, var(--overlay-2) 42%, var(--bg) 100%);
+}
 
 .content {
   position: relative;
@@ -327,13 +345,14 @@ a { color: var(--gold-light); }
 /* ═══════════════════════════════════════════════════════════════
    TYPE / BRAND MARKS
 ════════════════════════════════════════════════════════════════ */
+/* The real Fratelli monogram (F, vine leaves, grape cluster) —
+   img/logo.png, cropped from fratelliwines.in's own footer logo and
+   recolored to the brand gold (#C4973E, dark theme's --gold) so it's
+   a plain drop-in regardless of theme. No circle badge around it
+   (unlike the old placeholder "F" text) — the mark has its own
+   silhouette and reads better standing on its own. */
 .logo-mark {
-  width: 46px; height: 46px;
-  border: 1px solid var(--gold);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display);
-  font-size: 1.4rem; font-style: italic; color: var(--gold);
+  width: 52px; height: auto;
   margin-bottom: 0.9rem;
 }
 .brand {
@@ -703,6 +722,21 @@ a { color: var(--gold-light); }
   font-size: 0.7rem; color: var(--danger); margin-top: 0.3rem; min-height: 1em;
 }
 
+/* The Club Fratelli screen's upper content (eyebrow/headline/subtext,
+   first field label) can sit against a notably brighter patch of
+   vineyard.jpg (open sky) than the gradient overlay alone reliably
+   darkens — most visible in dark theme, where light text over that
+   patch loses contrast. A text-shadow scrim fixes this regardless of
+   exactly how bright that specific patch of photo is, rather than
+   trying to tune the shared overlay gradient (which every other
+   screen using this photo also depends on). */
+#s-signup .eyebrow,
+#s-signup .headline,
+#s-signup .subtext,
+#s-signup .field label {
+  text-shadow: 0 1px 3px var(--text-scrim), 0 2px 14px var(--text-scrim);
+}
+
 .location-badge {
   display: inline-flex; align-items: center; gap: 0.35rem;
   font-size: 0.7rem; color: var(--text-muted);
@@ -767,7 +801,7 @@ a { color: var(--gold-light); }
     <div class="parallax-bg" data-bg="img/vineyard.jpg" data-bg-light="img/vineyard-light.jpg" id="bg-landing"></div>
     <div class="screen-overlay"></div>
     <div class="content">
-      <div class="logo-mark fade-in">F</div>
+      <img src="img/logo.png" alt="Fratelli Wines" class="logo-mark fade-in">
       <div class="brand fade-in">Fratelli Wines</div>
       <div class="brand-sub fade-in">Digital Sommelier</div>
       <div class="gold-divider wide fade-in"></div>
@@ -1590,7 +1624,7 @@ const ON_ENTER = {
     });
   },
   's-food': function () {
-    typewrite('tw-food', 'Pairing with food tonight?', 26, () => {
+    typewrite('tw-food', 'What will be on the table?', 26, () => {
       document.getElementById('food-choices').classList.add('visible');
     });
   },
