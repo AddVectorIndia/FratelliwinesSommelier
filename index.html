@@ -696,6 +696,20 @@ a { color: var(--gold-light); }
 }
 .rec-spec-value { font-size: 0.78rem; color: var(--text); margin-top: 0.2rem; }
 
+/* Links to that exact wine's own product page on fratelliwines.in
+   (derived from bottleImg's slug, not a shared collection-page link —
+   each of the 3 cards points somewhere different) — opens in a new
+   tab so the guest doesn't lose their place mid-quiz. */
+.rec-view-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.72rem;
+  color: var(--gold-light);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.rec-view-link:hover { color: var(--gold); }
+
 .rec-pagination {
   display: flex; align-items: center; justify-content: center; gap: 1rem;
   margin-top: 1.2rem;
@@ -1525,6 +1539,12 @@ function renderResults() {
     const w = r.wine;
     const servePair = SERVE_PAIR_BY_TYPE[w.type] || {};
     const displayName = w.name.replace(/^Fratelli\s+/, '');
+    // bottleImg is always "<product-slug>.jpg" (see img/bottles/ —
+    // downloaded from this exact product page), so the slug -- and
+    // this link -- can be derived from it instead of carrying a
+    // second, redundant URL field per wine.
+    const slug = w.bottleImg.replace(/\.jpg$/, '');
+    const productUrl = `https://fratelliwines.in/collections/wine/products/${slug}`;
 
     const card = document.createElement('div');
     card.className = 'rec-card-v2' + (i === 0 ? ' active' : '');
@@ -1548,6 +1568,7 @@ function renderResults() {
           <div class="rec-spec-label">Pair</div>
           <div class="rec-spec-value">${servePair.pair || '—'}</div>
         </div>
+        <a class="rec-view-link" href="${productUrl}" target="_blank" rel="noopener noreferrer">View Full Details ↗</a>
       </div>
     `;
     carousel.appendChild(card);
