@@ -109,8 +109,16 @@ wrapping) at both ends. Each card: the wine's own bottle photo on the
 left (`img/bottles/`, see below), and on the right an eyebrow ("Perfect
 Match!" for rank 1, "Great Match!" for the other two), the wine name
 in large italic gold script, then three labeled spec rows — Variety,
-Serve, Pair — each separated by a thin divider. Two side-by-side
-buttons below the carousel, Email My Selection (→ the existing signup
+Serve, Pair — each separated by a thin divider, and finally a "View
+Full Details ↗" link to *that exact wine's* own product page on
+fratelliwines.in (`target="_blank" rel="noopener noreferrer"`, so it
+opens in a new tab rather than navigating the guest away mid-quiz).
+The URL isn't a second stored field — it's derived from `bottleImg`
+(`<slug>.jpg` → `.../products/<slug>`, since the photo was downloaded
+from that exact product page in the first place), so there's no way
+for a wine's photo and its "view details" link to point at two
+different products. Two side-by-side buttons below the carousel,
+Email My Selection (→ the existing signup
 screen, unchanged) and Restart (→ `restartQuiz()`, same as the Thanks
 screen's "Take the Quiz Again"); a smaller "No thanks, I'm done" link
 (→ `skipSignup()`) stays available underneath for guests who want to
