@@ -11,17 +11,16 @@ intentionally not published here.
 
 ## What it does
 
-Landing page → 6-question quiz (wine type → occasion → food pairing →
-aroma → flavour → budget) → 3 ranked recommendations, each shown as a
-card with a large rank numeral (I/II/III) and a per-question score-bar
-breakdown → optional email signup → thank-you screen. Dark wine/gold
-brand styling, animated screen transitions, Ken Burns backgrounds,
-typewriter copy, animated score bars.
+Landing page → 5-question quiz (wine type → occasion → food pairing →
+palate sliders → budget) → 3 ranked recommendations in a single-card
+carousel (bottle photo, Variety/Serve/Pair, prev/next pagination) →
+optional email signup → thank-you screen. Dark wine/gold brand
+styling, animated screen transitions, Ken Burns backgrounds,
+typewriter copy.
 
-Occasion, food and aroma are all **skippable and unscored** — they
-shape the results-screen copy ("Curated for your Hosting evening,
-paired with Italian cuisine, with a nose of Vanilla & Cherry…") and the
-captured lead, but never affect ranking.
+Food is **skippable and unscored** — it shapes the captured lead but
+never affects ranking (see Recommendation scoring below for what
+*does* rank the wines).
 
 Choice buttons are plain text, no emoji glyphs — every `.choice-btn`
 used to lead with a pictograph icon (🍷, 🥳, 🍛, …); those are gone,
@@ -39,8 +38,8 @@ confirmation screen, not part of the back chain). It's one shared
 element (`#back-btn`), not one per screen: `goBack()` looks up the
 current screen in `PREV_SCREEN` (a flat "what comes before me" map,
 sufficient since the whole quiz is a single straight line — even the
-Aroma/Flavour Skip buttons and the Signup "Skip for now" link land on
-the same next screen a real choice would) and re-shows/hides the
+Signup "Skip for now" link lands on the same next screen a real submit
+would) and re-shows/hides the
 button via `updateBackButton()`, called from `goTo()` on every
 navigation. Going back preserves whatever was previously selected on
 that screen (`.selected` classes aren't cleared by navigating away),
@@ -50,73 +49,96 @@ so retracing your steps shows your prior answer still highlighted.
 
 Every wine is scored 0–100% as a weighted blend. That score isn't
 shown to the guest directly (no star rating or match percentage on the
-card) — it's used only to rank and order the three recommendations,
-each of which still gets a full per-question score-bar breakdown:
+card) — it's used only to rank and order the three recommendations:
 
 | Weight | Signal | How it's matched |
 |---|---|---|
-| **50%** | Category (wine type) | Exact type match = full credit; "Surprise Me" = full credit for every type |
-| **25%** | Price | Exact band = full credit; an adjacent band = partial credit; "doesn't matter" = full credit |
-| **25%** | Flavour | Guest single-selects one real tasting note (from the wine data's Flavour1/Flavour2 columns, e.g. "Apple", "Baked Spices"); score = the fraction of *that wine's own* flavour notes the pick matches — 1.0 if the wine only has one note and it matches, 0.5 if the wine has two notes and the pick matches one of them, 0 if it matches neither. No pick = neutral 50%, never a penalty |
+| **45%** | Category (wine type) | Exact type match = full credit; "Surprise Me" = full credit for every type |
+| **35%** | Price | Exact band = full credit; an adjacent band = partial credit; "doesn't matter" = full credit |
+| **15%** | Occasion | Exact membership in the wine's own `occasions` list = full credit, otherwise zero; "no particular occasion"/no pick = full credit for every wine |
+| **5%** | Palate (Body/Fruit/Oak/Sweetness sliders) | See below |
 
-The Flavour (and Aroma) picker only shows notes that actually occur on
-wines of the type the guest already chose in step 1, so a guest is
-never offered a note that can't possibly show up in their results.
-Choosing "Surprise Me" shows the full catalogue-wide list. Both pickers
-are **single-select**, and — same as every other choice screen in the
-quiz (wine type/occasion/food/price) — tapping a note immediately
-selects it and auto-advances to the next screen; there's no separate
-Continue press. A "Skip" button styled identically to every other
-choice button in the quiz (`.choice-btn`, not a plain text link) stays
-below the grid for guests who don't want to pick anything.
+Food is asked and captured on the lead but has no per-wine data to
+check against at all, so it stays personalization-only, zero weight —
+same as it's always been.
 
-**Occasion, Food and Aroma are unscored, personalization-only** — asked,
-shown in results copy, captured on the lead, zero ranking weight. Each
-is skippable (Occasion/Food via an explicit "Skip" choice, Aroma by
-just not tapping a note before hitting "Skip →").
+**Palate matching**: the wine data's own Body/Fruit/Oak/Sweetness
+columns (Low/Medium/High, mapped to 1/2/3 — Oak's extra "None" value
+folds into "Low") are compared against the guest's 4 slider picks one
+dimension at a time: `1 − |userValue − wineValue| / 2`, so a 2-step
+gap (e.g. picking Low against a High wine) scores 0, adjacent scores
+0.5, exact scores 1.0. The 4 dimension scores are averaged into one
+number for the 5% weight — the same distance-based partial credit
+`priceMatch` already uses for adjacent price bands, just applied
+per-dimension. No slider input at all (shouldn't happen — they default
+to Medium/2 on page load) falls back to neutral 0.5.
 
-The exact formulas (`categoryMatch`, `priceMatch`, `flavourTagMatch`,
-`getAvailableTags`, `scoreWine`) are in the `<script>` block in
+The exact formulas (`categoryMatch`, `priceMatch`, `occasionMatch`,
+`palateMatch`, `scoreWine`) are in the `<script>` block in
 `index.html` — search for "SCORING". `score.pct` (0–100) only ever
-drives sort order and the score-bar fills now — there's no visible
-rating number or star display on the card at all.
+drives sort order now — there's no visible rating number, star
+display, or score-bar breakdown on the card at all (see Results card
+below for what replaced it).
 
-### Card header
+### Palate screen
 
-`.rec-top` is just the wine name/type/price on the left and the rank
-numeral (`.rec-rank` — "I"/"II"/"III") on the right, `justify-content:
-space-between`. The numeral used to sit small next to the wine name,
-paired with a star rating + match-percentage on the right; both the
-stars and the percentage are gone now (`score.pct` still ranks the
-wines, it's just not shown), so the numeral moved to that now-empty
-right side and grew from `0.75rem` to `2.1rem` to still read as a
-deliberate design element on its own rather than an afterthought.
+Replaces what used to be two separate screens (Aroma, then Flavour —
+both single-select tag pickers). One screen now, "Let's understand
+your palate," with 4 native `<input type="range">` sliders (Body,
+Fruit, Oak, Sweetness; min 1/max 3/step 1, defaulting to 2/Medium).
+Each slider's fill and its Low/Medium/High value label repaint live on
+every `input` event (`paintPalateSlider()`) — plain range inputs have
+no cross-browser "filled track" styling, so the gold portion is a
+manually-computed `background: linear-gradient(...)` recalculated on
+every drag. No auto-advance here (unlike every single-select screen
+elsewhere in the quiz) — with 4 independent sliders there's no one tap
+that means "done," so guests move on via a dedicated Next arrow
+(bottom-right of the screen, `position: absolute` within `.screen`, a
+fixed landmark that doesn't shift if the sliders' content height
+varies).
 
-### Results breakdown bars
+### Results card
 
-Each card shows one bar per question asked, split into two equal-width
-"wings" (`.score-bars-side` / `.score-bars-side.mirror` — a `grid-
-template-columns: 1fr 1fr` container; the mirrored side keeps its rows
-`align-items: stretch` so both columns stay the same width, it only
-flips the label's text-align and the track's `flex-direction` to
-`row-reverse`): Category/Occasion/Food on the left (bars fill
-left→right, normal), and Aroma/Flavour/Price on the right (bars fill
-right→left) — no percentage number, just the bar.
+One recommendation shown at a time in a paginated carousel
+(`.rec-carousel`, `showRecCard()`), not a scrollable stack of three —
+prev/next arrows plus a "Recommendation 0X/03" label, clamped (not
+wrapping) at both ends. Each card: the wine's own bottle photo on the
+left (`img/bottles/`, see below), and on the right an eyebrow ("Perfect
+Match!" for rank 1, "Great Match!" for the other two), the wine name
+in large italic gold script, then three labeled spec rows — Variety,
+Serve, Pair — each separated by a thin divider. A consent checkbox
+("I agree to receive updates…", `state.marketingConsent`) and two
+side-by-side buttons, Email My Selection (→ the existing signup
+screen, unchanged) and Restart (→ `restartQuiz()`, same as the Thanks
+screen's "Take the Quiz Again"), sit below the carousel; a smaller "No
+thanks, I'm done" link (→ `skipSignup()`) stays available underneath
+for guests who want to leave without either.
 
-Category/Flavour/Price show the *real* score component (Flavour can
-legitimately show an empty bar if the guest's pick doesn't match that
-wine at all). Occasion/Food/Aroma carry 0% actual weight, so rather
-than an empty bar giving that away, they render a deterministic,
-wine-specific "looks-decent" fill (`personalizationFill()` in
-`index.html`, seeded per wine+dimension so it's stable across
-re-renders, not fabricated fresh each time) in the 78–90% range, or
-88–98% where there's a real match to check (Occasion against the
-wine's occasion list, Aroma against its aroma notes) — kept close to
-each other and both on the high end deliberately, since the real
-scored rows often land at a clean 100% and a floor that's merely
-"okay" (e.g. 60%) would still visibly stand out next to those. Food
-has no per-wine data to check against at all, so it's always in the
-lower (78–90%) band.
+### Wine data: variety, bottle photos, Serve/Pair
+
+`variety` (grape blend, e.g. "Sangiovese & Cabernet Sauvignon") and
+`bottleImg` (`img/bottles/<slug>.jpg`) are real, wine-specific data —
+scraped once from each wine's own product page on fratelliwines.in
+(their `Variety: …` description text and `og:image` product photo) and
+saved directly into the `WINES` array and `img/bottles/`, not
+generated or fetched at runtime. Three wines (Noi Sparkling, Noi
+Sparkling Rosé, Master Selection Late Harvest) don't state an exact
+blend on their page, so those three carry an honest generic label
+("Sparkling Blend", etc.) rather than a guessed one. Bottle photos were
+flattened onto white and re-compressed as JPEG (~20–30 KB each,
+matching this repo's existing photo convention) — the source PNGs'
+off-white backdrop is genuinely baked into every pixel (verified: 100%
+opaque, not unset alpha), so it can't be dropped out losslessly;
+`.rec-card-photo` frames it with a border + rounded corners instead of
+fighting it.
+
+**Serve (temperature/decant) and Pair (food pairing) are *not*
+per-wine scraped data** — fratelliwines.in doesn't publish either field
+on individual product pages, only Variety. `SERVE_PAIR_BY_TYPE` in
+`index.html` is standard sommelier serving convention keyed by wine
+*type* (red/white/rosé/sparkling/dessert), not a per-SKU fact, and is
+documented as such in the code rather than presented as something
+specific to that exact bottle.
 
 ## Lead capture — Fratelli Enquiry API
 
@@ -137,7 +159,11 @@ It's fire-and-forget with its own try/catch (`submitFratelliEnquiry()`)
 — a network hiccup there can never block the on-screen success state.
 As a backup/debug aid, every submission is *also* logged to the console
 and saved to `localStorage['fratelli_leads']`, and fires a Meta Pixel
-`Lead` event.
+`Lead` event. The Results screen's "I agree to receive updates"
+checkbox (`state.marketingConsent`) rides along in that local backup
+log too, but isn't forced into the Fratelli Enquiry API call above —
+that endpoint's payload shape is fixed/external, not something to
+extend on our own.
 
 That endpoint's TLS cert expired for an extended period in the past
 (unrelated to this site) and has since been renewed with auto-renewal
@@ -222,11 +248,8 @@ recolored assets.
 Verified via Chrome DevTools Protocol's `Emulation.setEmulatedMedia`
 (forces `prefers-color-scheme` without an actual OS-level toggle)
 across the full quiz in both themes, plus the manual toggle itself:
-persistence across reload, the image swap firing correctly and
-immediately on toggle, and (this being where a redesign like this is
-most likely to quietly break) the Aroma/Flavour Skip button rendering
-pixel-identical (padding, font-size, layout direction, colors) to
-every other `.choice-btn` in the quiz.
+persistence across reload and the image swap firing correctly and
+immediately on toggle.
 
 **Card surfaces are deliberately translucent in both themes**
 (`--surface-1/1-end/2` sit around 1–5% alpha — a dark tint in light
@@ -239,14 +262,6 @@ at the source, and even after reverting toward the original ~3.5%
 value it still read as a slightly whitish, too-solid block against the
 photo — currently at ~1.8–2.2%, near-invisible on its own and only
 really visible via the border + text contrast.
-
-**Aroma/Flavour tag chips (`.tag-chip`) use the exact same tokens as
-`.choice-btn`** (background, border, border-radius, hover/selected
-treatment) — only the layout differs (a wrapping pill row via
-`.tag-grid`, not a fixed grid), since aroma/flavour lists run to a
-dozen-plus items. Verified via computed-style comparison against a
-reference `.choice-btn` in both themes (background, border, and
-border-radius came back identical in the CDP sweep).
 
 ## Scroll container (`.content`, not `.screen`)
 
@@ -272,25 +287,24 @@ recommendation card. Keeping the scroll on `.content` instead means
 the background/overlay always stay pinned behind the full 900px
 viewport no matter how far the content itself has scrolled.
 
-## Selected buttons don't scale (`.choice-btn`/`.tag-chip`)
+## Selected buttons don't scale (`.choice-btn`)
 
-`.choice-btn.selected` and `.tag-chip.selected` used to also
-`transform: scale(1.03)` on selection. `transform` doesn't affect
-grid/flex layout, so the scaled-up box visually grew past its own cell
-into the gap — and since neither had a `z-index`, a plain sibling that
-comes *after* it in the DOM (e.g. the next grid cell in the same row)
-still painted on top of that overflow by source order, making the
-selected button appear to dip *behind* its neighbor right at the
-moment it's picked. First fix attempt widened the grid gaps and added
-`z-index`, which reduced but didn't fully eliminate it at every
-viewport width. Current fix drops the scale transform entirely —
-selection is border-color + background only, the same same-footprint
-treatment `.price-btn.selected` already used without ever having this
-problem — so there's no growth to spill into a neighbor in the first
-place, regardless of gap size or viewport. `.choice-grid`'s gap
-(`0.85rem`) and `.tag-grid`'s (`0.65rem`) stay at their widened values
-for general breathing room, they just aren't load-bearing for this
-fix anymore.
+`.choice-btn.selected` used to also `transform: scale(1.03)` on
+selection. `transform` doesn't affect grid/flex layout, so the
+scaled-up box visually grew past its own cell into the gap — and since
+it had no `z-index`, a plain sibling that comes *after* it in the DOM
+(e.g. the next grid cell in the same row) still painted on top of that
+overflow by source order, making the selected button appear to dip
+*behind* its neighbor right at the moment it's picked. First fix
+attempt widened the grid gaps and added `z-index`, which reduced but
+didn't fully eliminate it at every viewport width. Current fix drops
+the scale transform entirely — selection is border-color + background
+only, the same same-footprint treatment `.price-btn.selected` already
+used without ever having this problem — so there's no growth to spill
+into a neighbor in the first place, regardless of gap size or
+viewport. `.choice-grid`'s gap (`0.85rem`) stays at its widened value
+for general breathing room, it just isn't load-bearing for this fix
+anymore.
 
 ## Signup fields
 
