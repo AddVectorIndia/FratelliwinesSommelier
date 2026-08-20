@@ -729,7 +729,19 @@ a { color: var(--gold-light); }
   display: flex; align-items: center; justify-content: center; gap: 0.8rem;
   margin-top: 1.4rem;
 }
-.results-actions .btn-primary, .results-actions .btn-ghost { flex: 1; max-width: 220px; }
+/* "Email My Selection" is longer than "Restart" -- at the buttons'
+   normal font-size it wrapped to two lines inside this narrower
+   flex:1 width, making it visibly taller than Restart right next to
+   it. Smaller, shared font-size + tighter horizontal padding for both
+   buttons here (only here, not the global .btn-primary/.btn-ghost
+   sizing used elsewhere) keeps everything on one line so the two
+   buttons come out the same height. */
+.results-actions .btn-primary, .results-actions .btn-ghost {
+  flex: 1; max-width: 220px;
+  font-size: 0.72rem;
+  padding: 0.85rem 1rem;
+  white-space: nowrap;
+}
 #s-recs > .content > .btn-link { margin-top: 0.9rem; }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -970,10 +982,6 @@ a { color: var(--gold-light); }
         <span class="rec-pag-label" id="rec-pag-label"></span>
         <button class="rec-pag-btn" id="rec-next" onclick="showRecCard(recIndex + 1)" aria-label="Next recommendation">→</button>
       </div>
-      <label class="consent-check">
-        <input type="checkbox" id="marketing-consent" onchange="state.marketingConsent = this.checked">
-        <span>I agree to receive updates from Fratelli Vineyards.</span>
-      </label>
       <div class="results-actions">
         <button class="btn-primary" onclick="goTo('s-signup')">Email My Selection →</button>
         <button class="btn-ghost" onclick="restartQuiz()">Restart →</button>
@@ -1007,7 +1015,12 @@ a { color: var(--gold-light); }
           <div class="field-error" id="err-mobile"></div>
         </div>
 
-        <div style="display:flex;flex-direction:column;align-items:center;gap:0.7rem;margin-top:1.6rem">
+        <label class="consent-check" style="margin-top:1.1rem">
+          <input type="checkbox" id="marketing-consent" onchange="state.marketingConsent = this.checked">
+          <span>I agree to receive updates from Fratelli Vineyards.</span>
+        </label>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.7rem;margin-top:1rem">
           <button type="submit" class="btn-primary">Join &amp; Send My Picks</button>
           <button type="button" class="btn-link" onclick="skipSignup()">Skip for now</button>
         </div>

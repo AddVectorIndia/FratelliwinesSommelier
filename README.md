@@ -109,13 +109,27 @@ wrapping) at both ends. Each card: the wine's own bottle photo on the
 left (`img/bottles/`, see below), and on the right an eyebrow ("Perfect
 Match!" for rank 1, "Great Match!" for the other two), the wine name
 in large italic gold script, then three labeled spec rows — Variety,
-Serve, Pair — each separated by a thin divider. A consent checkbox
-("I agree to receive updates…", `state.marketingConsent`) and two
-side-by-side buttons, Email My Selection (→ the existing signup
+Serve, Pair — each separated by a thin divider. Two side-by-side
+buttons below the carousel, Email My Selection (→ the existing signup
 screen, unchanged) and Restart (→ `restartQuiz()`, same as the Thanks
-screen's "Take the Quiz Again"), sit below the carousel; a smaller "No
-thanks, I'm done" link (→ `skipSignup()`) stays available underneath
-for guests who want to leave without either.
+screen's "Take the Quiz Again"); a smaller "No thanks, I'm done" link
+(→ `skipSignup()`) stays available underneath for guests who want to
+leave without either. Both buttons share one smaller, shared font-size
+and tighter horizontal padding *scoped to this pair only* (not
+`.btn-primary`/`.btn-ghost` globally) — "Email My Selection" is
+noticeably longer than "Restart," and at the buttons' normal size it
+wrapped to two lines inside the narrower `flex: 1` width here, making
+it visibly taller than Restart right next to it; forcing both onto one
+line brings them back to the same height.
+
+The marketing-consent checkbox ("I agree to receive updates…",
+`state.marketingConsent`) lives on the **Club Fratelli (signup)
+screen** now, inside the form just above the submit button — not on
+Results. It's genuinely a signup-adjacent decision (whether to hear
+from Fratelli beyond this one set of picks), so it reads more
+naturally sitting right next to the form that's actually collecting
+contact details than on the results screen before a guest has decided
+whether to sign up at all.
 
 ### Wine data: variety, bottle photos, Serve/Pair
 
