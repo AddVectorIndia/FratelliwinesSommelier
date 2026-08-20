@@ -23,6 +23,29 @@ shape the results-screen copy ("Curated for your Hosting evening,
 paired with Italian cuisine, with a nose of Vanilla & Cherry…") and the
 captured lead, but never affect ranking.
 
+Choice buttons are plain text, no emoji glyphs — every `.choice-btn`
+used to lead with a pictograph icon (🍷, 🥳, 🍛, …); those are gone,
+the buttons are centered label text only. The `✦` used on Skip / "no
+particular occasion" buttons and the "doesn't matter" price option is
+gone too, dropped along with the rest for a consistent, icon-free look
+across every choice screen.
+
+## Navigation
+
+A back button (top-left, mirrors the theme toggle's circular top-right
+placement) appears on every screen from Wine Type through Signup —
+hidden on Landing (nothing before it) and Thanks (a terminal
+confirmation screen, not part of the back chain). It's one shared
+element (`#back-btn`), not one per screen: `goBack()` looks up the
+current screen in `PREV_SCREEN` (a flat "what comes before me" map,
+sufficient since the whole quiz is a single straight line — even the
+Aroma/Flavour Skip buttons and the Signup "Skip for now" link land on
+the same next screen a real choice would) and re-shows/hides the
+button via `updateBackButton()`, called from `goTo()` on every
+navigation. Going back preserves whatever was previously selected on
+that screen (`.selected` classes aren't cleared by navigating away),
+so retracing your steps shows your prior answer still highlighted.
+
 ## Recommendation scoring
 
 Every wine is scored 0–100% as a weighted blend. That score isn't
