@@ -437,6 +437,32 @@ a { color: var(--gold-light); }
 .theme-toggle:hover { border-color: var(--gold-dim); transform: scale(1.06); }
 .theme-toggle:active { transform: scale(0.94); }
 
+/* Back button — mirrors .theme-toggle's circular top-corner design on
+   the opposite (left) side. One shared element, not one per screen;
+   updateBackButton() (called from goTo()) shows/hides it and re-wires
+   which screen it returns to via PREV_SCREEN, since the quiz is a
+   strictly linear flow (no branching paths to track). Hidden on
+   landing (nothing to go back to) and thanks (a terminal screen). */
+.back-btn {
+  position: fixed;
+  top: 0.85rem; left: 0.9rem;
+  z-index: 21;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.05rem;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  transition: border-color .2s, background .2s, transform .15s, opacity .3s ease;
+}
+.back-btn.visible { opacity: 1; pointer-events: all; }
+.back-btn:hover { border-color: var(--gold-dim); transform: scale(1.06); }
+.back-btn:active { transform: scale(0.94); }
+
 /* ═══════════════════════════════════════════════════════════════
    BUTTONS
 ════════════════════════════════════════════════════════════════ */
@@ -494,17 +520,19 @@ a { color: var(--gold-light); }
 .choice-grid .span-2 { grid-column: 1 / -1; }
 
 .choice-btn {
+  /* Plain centered text — no icon glyph anymore (dropped the emoji
+     row entirely), so no need for the old flex-column + gap that used
+     to stack an icon above the label. */
   background: var(--surface-1);
   border: 1px solid var(--border-1);
   color: var(--text);
   border-radius: 4px;
-  padding: 0.95rem 0.6rem;
+  padding: 1.05rem 0.6rem;
   font-size: 0.82rem;
   letter-spacing: 0.02em;
-  display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  display: flex; align-items: center; justify-content: center; text-align: center;
   transition: border-color .2s, background .2s, transform .15s;
 }
-.choice-btn .icon { font-size: 1.35rem; }
 .choice-btn:hover { border-color: var(--gold-dim); background: var(--gold-wash-2); }
 .choice-btn.selected {
   /* No transform here on purpose — a scale() doesn't affect grid/flex
@@ -730,6 +758,7 @@ a { color: var(--gold-light); }
 </div>
 
 <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Switch between light and dark theme" title="Switch theme"></button>
+<button class="back-btn" id="back-btn" onclick="goBack()" aria-label="Go back" title="Back">←</button>
 
 <div id="app">
 
@@ -762,12 +791,12 @@ a { color: var(--gold-light); }
       <div class="eyebrow">Step 1 of 6</div>
       <p class="headline" id="tw-wine"></p>
       <div class="choice-grid" id="wine-choices">
-        <button class="choice-btn" data-val="red"><span class="icon">🍷</span>Red</button>
-        <button class="choice-btn" data-val="white"><span class="icon">🥂</span>White</button>
-        <button class="choice-btn" data-val="rose"><span class="icon">🌸</span>Rosé</button>
-        <button class="choice-btn" data-val="sparkling"><span class="icon">✨</span>Sparkling</button>
-        <button class="choice-btn" data-val="dessert"><span class="icon">🍯</span>Dessert</button>
-        <button class="choice-btn" data-val="any"><span class="icon">🎲</span>Surprise Me</button>
+        <button class="choice-btn" data-val="red">Red</button>
+        <button class="choice-btn" data-val="white">White</button>
+        <button class="choice-btn" data-val="rose">Rosé</button>
+        <button class="choice-btn" data-val="sparkling">Sparkling</button>
+        <button class="choice-btn" data-val="dessert">Dessert</button>
+        <button class="choice-btn" data-val="any">Surprise Me</button>
       </div>
     </div>
   </section>
@@ -780,13 +809,13 @@ a { color: var(--gold-light); }
       <div class="eyebrow">Step 2 of 6</div>
       <p class="headline" id="tw-occasion"></p>
       <div class="choice-grid" id="occasion-choices">
-        <button class="choice-btn" data-val="celebration"><span class="icon">🥳</span>Celebration</button>
-        <button class="choice-btn" data-val="hosting"><span class="icon">🏡</span>Hosting Guests</button>
-        <button class="choice-btn" data-val="date night"><span class="icon">❤️</span>Date Night</button>
-        <button class="choice-btn" data-val="brunch"><span class="icon">☀️</span>Brunch</button>
-        <button class="choice-btn" data-val="everyday"><span class="icon">🌿</span>Everyday</button>
-        <button class="choice-btn" data-val="night"><span class="icon">🌙</span>Night Out</button>
-        <button class="choice-btn span-2" data-val="any"><span class="icon">✦</span>No particular occasion</button>
+        <button class="choice-btn" data-val="celebration">Celebration</button>
+        <button class="choice-btn" data-val="hosting">Hosting Guests</button>
+        <button class="choice-btn" data-val="date night">Date Night</button>
+        <button class="choice-btn" data-val="brunch">Brunch</button>
+        <button class="choice-btn" data-val="everyday">Everyday</button>
+        <button class="choice-btn" data-val="night">Night Out</button>
+        <button class="choice-btn span-2" data-val="any">No particular occasion</button>
       </div>
     </div>
   </section>
@@ -799,12 +828,12 @@ a { color: var(--gold-light); }
       <div class="eyebrow">Step 3 of 6</div>
       <p class="headline" id="tw-food"></p>
       <div class="choice-grid" id="food-choices">
-        <button class="choice-btn" data-val="indian"><span class="icon">🍛</span>Indian</button>
-        <button class="choice-btn" data-val="asian"><span class="icon">🥢</span>Asian</button>
-        <button class="choice-btn" data-val="mexican"><span class="icon">🌮</span>Mexican</button>
-        <button class="choice-btn" data-val="italian"><span class="icon">🍝</span>Italian</button>
-        <button class="choice-btn" data-val="continental"><span class="icon">🥩</span>Continental</button>
-        <button class="choice-btn" data-val="any"><span class="icon">✦</span>Skip</button>
+        <button class="choice-btn" data-val="indian">Indian</button>
+        <button class="choice-btn" data-val="asian">Asian</button>
+        <button class="choice-btn" data-val="mexican">Mexican</button>
+        <button class="choice-btn" data-val="italian">Italian</button>
+        <button class="choice-btn" data-val="continental">Continental</button>
+        <button class="choice-btn" data-val="any">Skip</button>
       </div>
     </div>
   </section>
@@ -820,7 +849,7 @@ a { color: var(--gold-light); }
       <p class="subtext">Pick the one that draws you in most — this just colours your results, it won't affect ranking.</p>
       <div class="tag-grid" id="aroma-tags"></div>
       <div class="choice-grid visible" style="margin-top:1.7rem" id="aroma-continue">
-        <button class="choice-btn span-2" data-val="skip" onclick="selectAndAdvance(this, 's-flavour')"><span class="icon">✦</span>Skip</button>
+        <button class="choice-btn span-2" data-val="skip" onclick="selectAndAdvance(this, 's-flavour')">Skip</button>
       </div>
     </div>
   </section>
@@ -836,7 +865,7 @@ a { color: var(--gold-light); }
       <p class="subtext">Pick the one you're craving most — this is the "flavour" quarter of your match score.</p>
       <div class="tag-grid" id="flavour-tags"></div>
       <div class="choice-grid visible" style="margin-top:1.7rem" id="flavour-continue">
-        <button class="choice-btn span-2" data-val="skip" onclick="selectAndAdvance(this, 's-price')"><span class="icon">✦</span>Skip</button>
+        <button class="choice-btn span-2" data-val="skip" onclick="selectAndAdvance(this, 's-price')">Skip</button>
       </div>
     </div>
   </section>
@@ -853,7 +882,7 @@ a { color: var(--gold-light); }
         <button class="price-btn" data-val="500-1000"><span>Mid-range</span><span class="tag">₹500–1000</span></button>
         <button class="price-btn" data-val="1000-1500"><span>Premium</span><span class="tag">₹1000–1500</span></button>
         <button class="price-btn" data-val=">1500"><span>Prestige</span><span class="tag">₹1500+</span></button>
-        <button class="price-btn" data-val="any"><span>Doesn't matter</span><span class="tag">✦</span></button>
+        <button class="price-btn" data-val="any"><span>Doesn't matter</span></button>
       </div>
     </div>
   </section>
@@ -1178,6 +1207,24 @@ async function submitFratelliEnquiry({ name, email, mobile }) {
 ════════════════════════════════════════════════════════════════ */
 const QUIZ_SCREENS = ['s-wine', 's-occasion', 's-food', 's-aroma', 's-flavour', 's-price', 's-recs'];
 
+// The whole flow is one straight line (no branching paths — the
+// Aroma/Flavour "Skip" buttons and the Signup "Skip for now" link all
+// still land on the same next screen a real selection would), so a
+// flat "what's before me" map is enough for a back button; no
+// navigation-history stack needed. Landing has nothing before it, and
+// Thanks is a terminal confirmation screen, so both are left out on
+// purpose — the back button just stays hidden on those two.
+const PREV_SCREEN = {
+  's-wine': 's-landing',
+  's-occasion': 's-wine',
+  's-food': 's-occasion',
+  's-aroma': 's-food',
+  's-flavour': 's-aroma',
+  's-price': 's-flavour',
+  's-recs': 's-price',
+  's-signup': 's-recs',
+};
+
 function qs(sel, root) { return (root || document).querySelector(sel); }
 function qsa(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
 
@@ -1249,6 +1296,16 @@ function updateProgress(screenId) {
   });
 }
 
+function updateBackButton(screenId) {
+  document.getElementById('back-btn').classList.toggle('visible', screenId in PREV_SCREEN);
+}
+
+function goBack() {
+  const current = qs('.screen.active');
+  const prev = current && PREV_SCREEN[current.id];
+  if (prev) goTo(prev);
+}
+
 function goTo(id) {
   const from = qs('.screen.active');
   const to = document.getElementById(id);
@@ -1259,6 +1316,7 @@ function goTo(id) {
   if (toContent) toContent.scrollTop = 0; // always enter a screen scrolled to top
   lazyLoadBg(to);
   updateProgress(id);
+  updateBackButton(id);
   window.scrollTo(0, 0);
   (ON_ENTER[id] || function () {})();
 }
