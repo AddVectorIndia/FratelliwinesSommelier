@@ -573,7 +573,7 @@ a { color: var(--gold-light); }
    3-High — replaces the old Aroma/Flavour tag pickers)
 ════════════════════════════════════════════════════════════════ */
 .palate-sliders {
-  width: 100%; margin-top: 1.8rem;
+  width: 100%; margin-top: 1.3rem;
   display: flex; flex-direction: column; gap: 1.5rem;
 }
 .palate-row-top {
@@ -619,23 +619,6 @@ a { color: var(--gold-light); }
   font-size: 0.62rem; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--text-muted); margin-top: 0.4rem;
 }
-/* Bottom-right of the screen, not inline with the sliders — a fixed
-   landmark the guest always finds in the same spot once they're done
-   dragging, rather than a button that shifts if content height varies. */
-.palate-next-btn {
-  position: absolute;
-  right: 1.5rem; bottom: 2rem;
-  z-index: 2;
-  width: 54px; height: 54px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--gold), #A97F32);
-  color: var(--ink);
-  font-size: 1.3rem;
-  box-shadow: 0 8px 24px -8px var(--gold-shadow);
-  transition: transform .25s var(--ease), filter .25s;
-}
-.palate-next-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
-.palate-next-btn:active { transform: translateY(0); }
 
 /* ═══════════════════════════════════════════════════════════════
    PRICE GRID
@@ -931,7 +914,6 @@ a { color: var(--gold-light); }
     <div class="content" style="max-width:480px">
       <div class="eyebrow">Step 4 of 5</div>
       <p class="headline" id="tw-palate"></p>
-      <p class="subtext">Slide each to match your taste — 1 is Low, 3 is High.</p>
       <div class="palate-sliders" id="palate-sliders">
         <div class="palate-row">
           <div class="palate-row-top"><span class="palate-label">Body</span><span class="palate-value" id="palate-body-value">Medium</span></div>
@@ -954,8 +936,8 @@ a { color: var(--gold-light); }
           <div class="palate-ticks"><span>Low</span><span>Medium</span><span>High</span></div>
         </div>
       </div>
+      <button class="btn-primary" style="margin-top:1.8rem" onclick="goTo('s-price')">Next →</button>
     </div>
-    <button class="palate-next-btn" onclick="goTo('s-price')" aria-label="Next">→</button>
   </section>
 
   <!-- ══════════════════════ PRICE — 35% weight ══════════════════════ -->
