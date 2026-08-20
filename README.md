@@ -92,10 +92,13 @@ no cross-browser "filled track" styling, so the gold portion is a
 manually-computed `background: linear-gradient(...)` recalculated on
 every drag. No auto-advance here (unlike every single-select screen
 elsewhere in the quiz) — with 4 independent sliders there's no one tap
-that means "done," so guests move on via a dedicated Next arrow
-(bottom-right of the screen, `position: absolute` within `.screen`, a
-fixed landmark that doesn't shift if the sliders' content height
-varies).
+that means "done," so guests move on via a **Next →** button, styled
+and positioned exactly like the primary button on every other screen
+(`.btn-primary`, centered below the sliders) rather than a bespoke
+control of its own. No instructional subtext under the headline either
+("Slide each to match your taste…") — the Low/Medium/High tick labels
+under each slider already say that, so the line was just repeating
+itself while eating vertical space the sliders can use instead.
 
 ### Results card
 
@@ -125,12 +128,20 @@ generated or fetched at runtime. Three wines (Noi Sparkling, Noi
 Sparkling Rosé, Master Selection Late Harvest) don't state an exact
 blend on their page, so those three carry an honest generic label
 ("Sparkling Blend", etc.) rather than a guessed one. Bottle photos were
-flattened onto white and re-compressed as JPEG (~20–30 KB each,
+flattened onto white and re-compressed as JPEG (~20–35 KB each,
 matching this repo's existing photo convention) — the source PNGs'
 off-white backdrop is genuinely baked into every pixel (verified: 100%
 opaque, not unset alpha), so it can't be dropped out losslessly;
 `.rec-card-photo` frames it with a border + rounded corners instead of
-fighting it.
+fighting it. Each photo is also auto-cropped tight to just the bottle's
+own bounding box (detected by color-diffing every pixel against that
+image's own corner/background color, at a high enough threshold to
+ignore the very faint "F" watermark baked into the backdrop and lock
+onto the much higher-contrast bottle silhouette) plus a small margin,
+rather than shipping the full product-shot canvas — since the card
+frame renders at a fixed width (`object-fit: contain`), a tighter crop
+means the bottle actually fills that frame instead of floating in a
+sea of white space.
 
 **Serve (temperature/decant) and Pair (food pairing) are *not*
 per-wine scraped data** — fratelliwines.in doesn't publish either field
