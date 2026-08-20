@@ -569,37 +569,73 @@ a { color: var(--gold-light); }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   TAG GRID (Aroma / Flavour — multi-select chips, sized to their
-   own text rather than stretched evenly, since the
-   list length varies with the chosen wine type)
+   PALATE SLIDERS (Body / Fruit / Oak / Sweetness, 1-Low/2-Medium/
+   3-High — replaces the old Aroma/Flavour tag pickers)
 ════════════════════════════════════════════════════════════════ */
-.tag-grid {
-  display: flex; flex-wrap: wrap; gap: 0.65rem;
-  width: 100%; margin-top: 1.4rem;
+.palate-sliders {
+  width: 100%; margin-top: 1.8rem;
+  display: flex; flex-direction: column; gap: 1.5rem;
 }
-.tag-chip {
-  /* Same tokens/treatment as .choice-btn (background, border, radius,
-     hover, selected) for full visual consistency across the quiz —
-     only the layout differs (flex-wrap pill row here, not a fixed
-     grid), since aroma/flavour lists run to a dozen-plus items and a
-     grid of full-size cards would get unwieldy. */
-  background: var(--surface-1);
-  border: 1px solid var(--border-1);
-  color: var(--text);
-  border-radius: 4px;
-  padding: 0.65rem 1rem;
-  font-size: 0.78rem;
-  letter-spacing: 0.02em;
-  transition: border-color .2s, background .2s, transform .15s;
+.palate-row-top {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 0.55rem;
 }
-.tag-chip:hover { border-color: var(--gold-dim); background: var(--gold-wash-2); }
-.tag-chip.selected {
-  /* Same reasoning as .choice-btn.selected — no transform, color
-     change only, so there's no growth to spill into a neighbor. */
-  border-color: var(--gold);
-  background: var(--gold-wash-3);
+.palate-label { font-size: 0.8rem; letter-spacing: 0.02em; color: var(--text); }
+.palate-value {
+  font-family: var(--font-display); font-style: italic;
+  font-size: 0.85rem; color: var(--gold-light);
 }
-.tag-empty { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
+/* The filled portion of the track (0/50/100%) is painted via an
+   inline background gradient, kept in sync with the value by
+   paintPalateSlider() on load and on every input event — a plain
+   <input type="range"> has no cross-browser "fill" pseudo-element. */
+.palate-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px;
+  border-radius: 99px;
+  background: var(--track-1);
+  outline: none;
+  cursor: pointer;
+}
+.palate-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 2px solid var(--bg);
+  box-shadow: 0 2px 6px rgba(0,0,0,.35);
+  cursor: pointer;
+}
+.palate-slider::-moz-range-thumb {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 2px solid var(--bg);
+  box-shadow: 0 2px 6px rgba(0,0,0,.35);
+  cursor: pointer;
+}
+.palate-ticks {
+  display: flex; justify-content: space-between;
+  font-size: 0.62rem; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-muted); margin-top: 0.4rem;
+}
+/* Bottom-right of the screen, not inline with the sliders — a fixed
+   landmark the guest always finds in the same spot once they're done
+   dragging, rather than a button that shifts if content height varies. */
+.palate-next-btn {
+  position: absolute;
+  right: 1.5rem; bottom: 2rem;
+  z-index: 2;
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), #A97F32);
+  color: var(--ink);
+  font-size: 1.3rem;
+  box-shadow: 0 8px 24px -8px var(--gold-shadow);
+  transition: transform .25s var(--ease), filter .25s;
+}
+.palate-next-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
+.palate-next-btn:active { transform: translateY(0); }
 
 /* ═══════════════════════════════════════════════════════════════
    PRICE GRID
@@ -626,76 +662,92 @@ a { color: var(--gold-light); }
 .price-btn .tag { color: var(--gold-light); font-family: var(--font-display); font-style: italic; }
 
 /* ═══════════════════════════════════════════════════════════════
-   RESULTS / SCORE BARS
+   RESULTS — single-card carousel (bottle photo + Variety/Serve/Pair),
+   one of the 3 recommendations visible at a time via showRecCard().
 ════════════════════════════════════════════════════════════════ */
-.rec-list { width: 100%; display: flex; flex-direction: column; gap: 1rem; margin-top: 1.4rem; }
+.rec-carousel { width: 100%; margin-top: 1.4rem; }
 
-.rec-card {
-  position: relative;
+.rec-card-v2 {
+  display: none;
   text-align: left;
   background: linear-gradient(160deg, var(--surface-2), var(--surface-1-end));
   border: 1px solid var(--border-1);
   border-radius: 6px;
-  padding: 1.1rem 1.1rem 1.15rem;
-  opacity: 0;
-  transform: translateY(16px);
-  transition: opacity .6s var(--ease), transform .6s var(--ease), border-color .3s;
+  padding: 1.2rem;
+  gap: 1.1rem;
 }
-.rec-card.show { opacity: 1; transform: translateY(0); }
-.rec-card:hover { border-color: var(--gold-dim); }
-.rec-card.rank-1 { border-color: var(--gold-dim); }
+.rec-card-v2.active { display: flex; align-items: flex-start; }
 
-.rec-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
-/* Rank numeral moved from a small left-side label (next to the wine
-   name) to a large right-aligned mark, now that the star rating/match
-   score it used to sit beside is gone — sized to carry the same visual
-   weight on its own that the two of them used to share. */
-.rec-rank {
-  font-family: var(--font-display);
-  font-style: italic; font-size: 2.1rem; color: var(--gold);
-  letter-spacing: 0.02em;
-  line-height: 1;
-  flex-shrink: 0;
+/* The source product photos have a genuinely opaque off-white
+   backdrop baked into every pixel (not real transparency — verified,
+   not just unset alpha), so it can't be dropped out losslessly. A
+   rounded, bordered frame around it reads as a deliberate "product
+   photo card" instead of a raw mismatched rectangle sitting directly
+   on the (much darker, in dark theme) card background. */
+.rec-card-photo {
+  flex: 0 0 34%;
+  display: flex; align-items: flex-start; justify-content: center;
+  border-radius: 4px;
+  border: 1px solid var(--border-1);
+  overflow: hidden;
 }
-.rec-name { font-family: var(--font-display); font-size: 1.25rem; color: var(--text); margin-top: 0.15rem; }
-.rec-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem; }
+.rec-card-photo img { width: 100%; height: auto; object-fit: contain; display: block; }
 
-.rec-notes { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.6rem; }
-.rec-notes b { color: var(--gold-light); font-weight: 500; }
+.rec-card-info { flex: 1; min-width: 0; }
+.rec-card-eyebrow {
+  font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold);
+}
+.rec-card-name {
+  font-family: var(--font-display); font-style: italic;
+  font-size: 1.7rem; color: var(--gold-light);
+  line-height: 1.15; margin-top: 0.2rem;
+}
+.rec-card-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem; }
 
-/* Two columns of 3 stats each: left column's bars fill left→right
-   (normal), right column's fill right→left (mirrored) — a "wings"
-   layout rather than one long stacked list. */
-.score-bars { margin-top: 0.85rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
-.score-bars-side { display: flex; flex-direction: column; gap: 0.55rem; }
-.score-bar-row { display: flex; flex-direction: column; gap: 0.3rem; }
-.score-bar-label {
-  font-size: 0.58rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted);
+.rec-spec {
+  border-top: 1px solid var(--border-1);
+  padding-top: 0.5rem; margin-top: 0.65rem;
 }
-.score-bar-track {
-  display: flex; height: 5px; border-radius: 99px;
-  background: var(--track-1); overflow: hidden;
+.rec-spec-label {
+  font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold);
 }
-.score-bar-fill {
-  height: 100%; border-radius: 99px; width: 0%;
-  background: linear-gradient(90deg, var(--gold), var(--gold-light));
-  transition: width 1s var(--ease);
+.rec-spec-value { font-size: 0.78rem; color: var(--text); margin-top: 0.2rem; }
+
+.rec-pagination {
+  display: flex; align-items: center; justify-content: center; gap: 1rem;
+  margin-top: 1.2rem;
+}
+.rec-pag-btn {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem;
+  transition: border-color .2s, background .2s, opacity .2s;
+}
+.rec-pag-btn:hover:not(:disabled) { border-color: var(--gold-dim); }
+.rec-pag-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.rec-pag-label {
+  font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold);
+  min-width: 11ch; text-align: center;
 }
 
-/* Mirrored side: rows/tracks must stay stretched to the FULL column
-   width (align-items default is already stretch) — only the label
-   text and the fill's growth direction actually flip. An earlier
-   version set align-items:flex-end here, which shrank each row to its
-   own content width instead of the column's, throwing off the two
-   columns' widths relative to each other. */
-.score-bars-side.mirror .score-bar-label { text-align: right; }
-.score-bars-side.mirror .score-bar-track { flex-direction: row-reverse; }
-.score-bars-side.mirror .score-bar-fill { background: linear-gradient(270deg, var(--gold), var(--gold-light)); }
+.consent-check {
+  display: flex; align-items: flex-start; gap: 0.55rem;
+  margin-top: 1.3rem; text-align: left;
+  font-size: 0.74rem; color: var(--text-muted);
+  cursor: pointer;
+}
+.consent-check input { margin-top: 0.2rem; accent-color: var(--gold); flex-shrink: 0; }
 
 .results-actions {
-  display: flex; flex-direction: column; align-items: center; gap: 0.7rem;
-  margin-top: 1.6rem;
+  display: flex; align-items: center; justify-content: center; gap: 0.8rem;
+  margin-top: 1.4rem;
 }
+.results-actions .btn-primary, .results-actions .btn-ghost { flex: 1; max-width: 220px; }
+#s-recs > .content > .btn-link { margin-top: 0.9rem; }
 
 /* ═══════════════════════════════════════════════════════════════
    FORM (signup)
@@ -775,7 +827,6 @@ a { color: var(--gold-light); }
 
 @media (max-width: 380px) {
   .choice-btn { font-size: 0.76rem; padding: 0.8rem 0.5rem; }
-  .tag-chip { font-size: 0.72rem; padding: 0.55rem 0.85rem; }
 }
 </style>
 </head>
@@ -788,7 +839,6 @@ a { color: var(--gold-light); }
   <span class="dot" data-step="3"></span>
   <span class="dot" data-step="4"></span>
   <span class="dot" data-step="5"></span>
-  <span class="dot" data-step="6"></span>
 </div>
 
 <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Switch between light and dark theme" title="Switch theme"></button>
@@ -817,12 +867,12 @@ a { color: var(--gold-light); }
     <div class="chevron-cue">︾</div>
   </section>
 
-  <!-- ══════════════════════ CATEGORY (wine type) — 50% weight ══════════════════════ -->
+  <!-- ══════════════════════ CATEGORY (wine type) — 45% weight ══════════════════════ -->
   <section class="screen" id="s-wine">
     <div class="parallax-bg" data-bg="img/cellar.jpg" id="bg-wine"></div>
     <div class="screen-overlay"></div>
     <div class="content">
-      <div class="eyebrow">Step 1 of 6</div>
+      <div class="eyebrow">Step 1 of 5</div>
       <p class="headline" id="tw-wine"></p>
       <div class="choice-grid" id="wine-choices">
         <button class="choice-btn" data-val="red">Red</button>
@@ -835,12 +885,12 @@ a { color: var(--gold-light); }
     </div>
   </section>
 
-  <!-- ══════════════════════ OCCASION (personalization only, unscored) ══════════════════════ -->
+  <!-- ══════════════════════ OCCASION — 15% weight ══════════════════════ -->
   <section class="screen" id="s-occasion">
     <div class="parallax-bg" data-bg="img/sculpture.jpg" id="bg-occasion"></div>
     <div class="screen-overlay"></div>
     <div class="content">
-      <div class="eyebrow">Step 2 of 6</div>
+      <div class="eyebrow">Step 2 of 5</div>
       <p class="headline" id="tw-occasion"></p>
       <div class="choice-grid" id="occasion-choices">
         <button class="choice-btn" data-val="celebration">Celebration</button>
@@ -859,7 +909,7 @@ a { color: var(--gold-light); }
     <div class="parallax-bg" data-bg="img/harvest.jpg" id="bg-food"></div>
     <div class="screen-overlay"></div>
     <div class="content">
-      <div class="eyebrow">Step 3 of 6</div>
+      <div class="eyebrow">Step 3 of 5</div>
       <p class="headline" id="tw-food"></p>
       <div class="choice-grid" id="food-choices">
         <button class="choice-btn" data-val="indian">Indian</button>
@@ -872,44 +922,48 @@ a { color: var(--gold-light); }
     </div>
   </section>
 
-  <!-- ══════════════════════ AROMA (personalization only, unscored — restricted to the
-       chosen wine type, single-select, skippable) ══════════════════════ -->
-  <section class="screen" id="s-aroma">
-    <div class="parallax-bg" data-bg="img/grapes.jpg" id="bg-aroma"></div>
+  <!-- ══════════════════════ PALATE — 5% weight (Body/Fruit/Oak/Sweetness,
+       1-Low/2-Medium/3-High sliders; replaces the old separate
+       Aroma + Flavour tag-picker screens) ══════════════════════ -->
+  <section class="screen" id="s-palate">
+    <div class="parallax-bg" data-bg="img/grapes.jpg" id="bg-palate"></div>
     <div class="screen-overlay"></div>
     <div class="content" style="max-width:480px">
-      <div class="eyebrow">Step 4 of 6</div>
-      <p class="headline" id="tw-aroma"></p>
-      <p class="subtext">Pick the one that draws you in most — this just colours your results, it won't affect ranking.</p>
-      <div class="tag-grid" id="aroma-tags"></div>
-      <div class="choice-grid visible" style="margin-top:1.7rem" id="aroma-continue">
-        <button class="choice-btn span-2" data-val="skip" onclick="selectAndAdvance(this, 's-flavour')">Skip</button>
+      <div class="eyebrow">Step 4 of 5</div>
+      <p class="headline" id="tw-palate"></p>
+      <p class="subtext">Slide each to match your taste — 1 is Low, 3 is High.</p>
+      <div class="palate-sliders" id="palate-sliders">
+        <div class="palate-row">
+          <div class="palate-row-top"><span class="palate-label">Body</span><span class="palate-value" id="palate-body-value">Medium</span></div>
+          <input type="range" min="1" max="3" step="1" value="2" class="palate-slider" id="palate-body" data-dim="body" aria-label="Body">
+          <div class="palate-ticks"><span>Low</span><span>Medium</span><span>High</span></div>
+        </div>
+        <div class="palate-row">
+          <div class="palate-row-top"><span class="palate-label">Fruit</span><span class="palate-value" id="palate-fruit-value">Medium</span></div>
+          <input type="range" min="1" max="3" step="1" value="2" class="palate-slider" id="palate-fruit" data-dim="fruit" aria-label="Fruit">
+          <div class="palate-ticks"><span>Low</span><span>Medium</span><span>High</span></div>
+        </div>
+        <div class="palate-row">
+          <div class="palate-row-top"><span class="palate-label">Oak</span><span class="palate-value" id="palate-oak-value">Medium</span></div>
+          <input type="range" min="1" max="3" step="1" value="2" class="palate-slider" id="palate-oak" data-dim="oak" aria-label="Oak">
+          <div class="palate-ticks"><span>Low</span><span>Medium</span><span>High</span></div>
+        </div>
+        <div class="palate-row">
+          <div class="palate-row-top"><span class="palate-label">Sweetness</span><span class="palate-value" id="palate-sweetness-value">Medium</span></div>
+          <input type="range" min="1" max="3" step="1" value="2" class="palate-slider" id="palate-sweetness" data-dim="sweetness" aria-label="Sweetness">
+          <div class="palate-ticks"><span>Low</span><span>Medium</span><span>High</span></div>
+        </div>
       </div>
     </div>
+    <button class="palate-next-btn" onclick="goTo('s-price')" aria-label="Next">→</button>
   </section>
 
-  <!-- ══════════════════════ FLAVOUR — 25% weight (Flavour1/Flavour2 columns,
-       restricted to the chosen wine type, single-select) ══════════════════════ -->
-  <section class="screen" id="s-flavour">
-    <div class="parallax-bg" data-bg="img/sculpture.jpg" id="bg-flavour"></div>
-    <div class="screen-overlay"></div>
-    <div class="content" style="max-width:480px">
-      <div class="eyebrow">Step 5 of 6</div>
-      <p class="headline" id="tw-flavour"></p>
-      <p class="subtext">Pick the one you're craving most — this is the "flavour" quarter of your match score.</p>
-      <div class="tag-grid" id="flavour-tags"></div>
-      <div class="choice-grid visible" style="margin-top:1.7rem" id="flavour-continue">
-        <button class="choice-btn span-2" data-val="skip" onclick="selectAndAdvance(this, 's-price')">Skip</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ══════════════════════ PRICE — 25% weight ══════════════════════ -->
+  <!-- ══════════════════════ PRICE — 35% weight ══════════════════════ -->
   <section class="screen" id="s-price">
     <div class="parallax-bg" data-bg="img/cellar.jpg" id="bg-price"></div>
     <div class="screen-overlay"></div>
     <div class="content">
-      <div class="eyebrow">Step 6 of 6</div>
+      <div class="eyebrow">Step 5 of 5</div>
       <p class="headline" id="tw-price"></p>
       <div class="price-grid" id="price-choices">
         <button class="price-btn" data-val="<500"><span>Under ₹500</span><span class="tag">₹&lt;500</span></button>
@@ -928,12 +982,21 @@ a { color: var(--gold-light); }
     <div class="content wide">
       <div class="eyebrow">Your Match</div>
       <p class="headline" id="recs-headline">Our Sommelier Recommends</p>
-      <p class="subtext" id="recs-sub"></p>
-      <div class="rec-list" id="rec-list"></div>
-      <div class="results-actions">
-        <button class="btn-primary" onclick="goTo('s-signup')">Email Me These Picks →</button>
-        <button class="btn-link" onclick="skipSignup()">No thanks, I'm done</button>
+      <div class="rec-carousel" id="rec-carousel"></div>
+      <div class="rec-pagination">
+        <button class="rec-pag-btn" id="rec-prev" onclick="showRecCard(recIndex - 1)" aria-label="Previous recommendation">←</button>
+        <span class="rec-pag-label" id="rec-pag-label"></span>
+        <button class="rec-pag-btn" id="rec-next" onclick="showRecCard(recIndex + 1)" aria-label="Next recommendation">→</button>
       </div>
+      <label class="consent-check">
+        <input type="checkbox" id="marketing-consent" onchange="state.marketingConsent = this.checked">
+        <span>I agree to receive updates from Fratelli Vineyards.</span>
+      </label>
+      <div class="results-actions">
+        <button class="btn-primary" onclick="goTo('s-signup')">Email My Selection →</button>
+        <button class="btn-ghost" onclick="restartQuiz()">Restart →</button>
+      </div>
+      <button class="btn-link" onclick="skipSignup()">No thanks, I'm done</button>
     </div>
   </section>
 
@@ -994,29 +1057,50 @@ a { color: var(--gold-light); }
    cleanup logic — a couple of whitespace quirks and one price-range
    typo, "1000-15000" → "500-1000", are fixed at source there).
 ════════════════════════════════════════════════════════════════ */
+/* `variety` (grape blend) and `bottleImg` are sourced from each wine's
+   own product page on fratelliwines.in — real, wine-specific data,
+   not fabricated. A few (Noi Sparkling, Noi Sparkling Rosé, Master
+   Selection Late Harvest) don't state an exact blend on their page,
+   so those three fall back to an honest generic label rather than a
+   guessed one. `bottleImg` files live in img/bottles/, downloaded
+   from the same product pages (see img/bottles/README in git history
+   / the scrape script in this project's session notes for the source
+   URLs — every file is that product's own official photography). */
 const WINES = [
-  {"name":"Fratelli J'Noon White","type":"white","price":">1500","occasions":["celebration","hosting"],"body":"medium","fruit":"high","oak":"high","sweetness":"low","aroma1":"Vanilla","aroma2":"Grape fruit","flavour1":"Apple","flavour2":"lemon zest"},
-  {"name":"Fratelli J'Noon Red","type":"red","price":">1500","occasions":["celebration","hosting"],"body":"high","fruit":"low","oak":"medium","sweetness":"low","aroma1":"Vanilla","aroma2":"Spices","flavour1":"Blackcurrant","flavour2":"Plums/tobacco"},
-  {"name":"Fratelli Sette","type":"red","price":">1500","occasions":["celebration","hosting","night"],"body":"medium","fruit":"medium","oak":"medium","sweetness":"low","aroma1":"Vanilla","aroma2":"Cloves","flavour1":"white pepper","flavour2":"tobacco"},
-  {"name":"Fratelli Brut","type":"sparkling","price":"1000-1500","occasions":["celebration","date night"],"body":"medium","fruit":"high","oak":"none","sweetness":"low","aroma1":"Lychee","aroma2":"bread yeast, pastry","flavour1":"green apple","flavour2":"sea salt"},
-  {"name":"Fratelli Noi Sparkling","type":"sparkling","price":"500-1000","occasions":["celebration"],"body":"low","fruit":"high","oak":"none","sweetness":"high","aroma1":"Passion Fruit","aroma2":"lime","flavour1":"passion fruit","flavour2":"croissant"},
-  {"name":"Fratelli Noi Sparkling Rose","type":"sparkling","price":"500-1000","occasions":["celebration"],"body":"low","fruit":"high","oak":"none","sweetness":"high","aroma1":"Strawberry","aroma2":"Blue-berry","flavour1":"apple","flavour2":null},
-  {"name":"Fratelli Master Selection White","type":"white","price":"1000-1500","occasions":["hosting"],"body":"low","fruit":"high","oak":"none","sweetness":"low","aroma1":"Yellow lemon zest","aroma2":"green apple","flavour1":"pineapple","flavour2":"sea salt"},
-  {"name":"Fratelli Master Selection Red","type":"red","price":"1000-1500","occasions":["hosting"],"body":"medium","fruit":"medium","oak":"low","sweetness":"low","aroma1":"Black pepper","aroma2":"cloves","flavour1":"liquirice","flavour2":"tobacco"},
-  {"name":"Fratelli Master Selection Rose","type":"rose","price":"1000-1500","occasions":["hosting"],"body":"low","fruit":"high","oak":"none","sweetness":"medium","aroma1":"rose petals","aroma2":"strawberry","flavour1":"apple","flavour2":"sea salt"},
-  {"name":"Fratelli Master Selection Late Harvest","type":"dessert","price":"1000-1500","occasions":["hosting"],"body":"high","fruit":"low","oak":"high","sweetness":"high","aroma1":"dry apricot","aroma2":"Orange zest","flavour1":"honey","flavour2":"almond"},
-  {"name":"Fratelli Chenin Blanc","type":"white","price":"500-1000","occasions":["brunch","everyday"],"body":"medium","fruit":"medium","oak":"none","sweetness":"low","aroma1":"Lime","aroma2":"Apple","flavour1":"almond","flavour2":"sea salt"},
-  {"name":"Fratelli Sangiovese Bianco","type":"white","price":"500-1000","occasions":["brunch","everyday"],"body":"low","fruit":"medium","oak":"none","sweetness":"low","aroma1":"Coconut","aroma2":"buganville","flavour1":"vanilla","flavour2":"sea salt"},
-  {"name":"Fratelli Chardonnay","type":"white","price":"500-1000","occasions":["brunch","date night","everyday"],"body":"low","fruit":"medium","oak":"none","sweetness":"low","aroma1":"Green Apple","aroma2":"Peach","flavour1":"floral notes","flavour2":"Gypsum"},
-  {"name":"Fratelli Sauvignon Blanc","type":"white","price":"500-1000","occasions":["brunch","everyday"],"body":"low","fruit":"high","oak":"none","sweetness":"low","aroma1":"Green Chilies","aroma2":"passion fruit","flavour1":"Sage","flavour2":"peach"},
-  {"name":"Fratelli Pinot Noir","type":"red","price":"1000-1500","occasions":["date night","everyday"],"body":"low","fruit":"high","oak":"low","sweetness":"low","aroma1":"Red Cherry","aroma2":"Raspberry","flavour1":"pomegranate","flavour2":"violet"},
-  {"name":"Fratelli Shiraz","type":"red","price":"500-1000","occasions":["everyday"],"body":"low","fruit":"high","oak":"low","sweetness":"low","aroma1":"Black pepper","aroma2":"white pepper","flavour1":"clove","flavour2":"stone"},
-  {"name":"Fratelli Merlot","type":"red","price":"1000-1500","occasions":["date night","everyday"],"body":"medium","fruit":"high","oak":"medium","sweetness":"low","aroma1":"cherry","aroma2":"plum","flavour1":"baked spices","flavour2":"vanilla"},
-  {"name":"Fratelli Cabernet Franc Shiraz","type":"red","price":"500-1000","occasions":["everyday"],"body":"medium","fruit":"medium","oak":"none","sweetness":"low","aroma1":"bellpepper","aroma2":"tobacco leaf","flavour1":"black pepper","flavour2":"licorice"},
-  {"name":"Fratelli Cabernet Sauvignon","type":"red","price":"500-1000","occasions":["everyday"],"body":"medium","fruit":"medium","oak":"low","sweetness":"low","aroma1":"black cherry","aroma2":"blackberry","flavour1":"bayleaf","flavour2":"licorice"},
-  {"name":"Fratelli Sangiovese","type":"red","price":"500-1000","occasions":["everyday"],"body":"low","fruit":"high","oak":"medium","sweetness":"low","aroma1":"sour cherry","aroma2":"red currant","flavour1":"violet","flavour2":"clove"},
-  {"name":"Fratelli Shiraz Rose","type":"rose","price":"500-1000","occasions":["brunch","everyday"],"body":"low","fruit":"high","oak":"none","sweetness":"medium","aroma1":"Strawberry","aroma2":"Blueberry","flavour1":"Soft all spice","flavour2":"rose"}
+  {"name":"Fratelli J'Noon White","type":"white","price":">1500","occasions":["celebration","hosting"],"body":"medium","fruit":"high","oak":"high","sweetness":"low","aroma1":"Vanilla","aroma2":"Grape fruit","flavour1":"Apple","flavour2":"lemon zest","variety":"Chardonnay & Sauvignon Blanc","bottleImg":"jnoon-white-new.jpg"},
+  {"name":"Fratelli J'Noon Red","type":"red","price":">1500","occasions":["celebration","hosting"],"body":"high","fruit":"low","oak":"medium","sweetness":"low","aroma1":"Vanilla","aroma2":"Spices","flavour1":"Blackcurrant","flavour2":"Plums/tobacco","variety":"Cabernet Sauvignon, Petit Verdot, Marselan & Cabernet Franc","bottleImg":"jnoon-red-new.jpg"},
+  {"name":"Fratelli Sette","type":"red","price":">1500","occasions":["celebration","hosting","night"],"body":"medium","fruit":"medium","oak":"medium","sweetness":"low","aroma1":"Vanilla","aroma2":"Cloves","flavour1":"white pepper","flavour2":"tobacco","variety":"Sangiovese & Cabernet Sauvignon","bottleImg":"sette-new.jpg"},
+  {"name":"Fratelli Brut","type":"sparkling","price":"1000-1500","occasions":["celebration","date night"],"body":"medium","fruit":"high","oak":"none","sweetness":"low","aroma1":"Lychee","aroma2":"bread yeast, pastry","flavour1":"green apple","flavour2":"sea salt","variety":"Chenin Blanc","bottleImg":"gran-cuvee-brut-new.jpg"},
+  {"name":"Fratelli Noi Sparkling","type":"sparkling","price":"500-1000","occasions":["celebration"],"body":"low","fruit":"high","oak":"none","sweetness":"high","aroma1":"Passion Fruit","aroma2":"lime","flavour1":"passion fruit","flavour2":"croissant","variety":"Sparkling Blend","bottleImg":"noi-sparkling-new.jpg"},
+  {"name":"Fratelli Noi Sparkling Rose","type":"sparkling","price":"500-1000","occasions":["celebration"],"body":"low","fruit":"high","oak":"none","sweetness":"high","aroma1":"Strawberry","aroma2":"Blue-berry","flavour1":"apple","flavour2":null,"variety":"Sparkling Rosé Blend","bottleImg":"noi-sparkling-rose-new.jpg"},
+  {"name":"Fratelli Master Selection White","type":"white","price":"1000-1500","occasions":["hosting"],"body":"low","fruit":"high","oak":"none","sweetness":"low","aroma1":"Yellow lemon zest","aroma2":"green apple","flavour1":"pineapple","flavour2":"sea salt","variety":"Chardonnay & Sauvignon Blanc","bottleImg":"ms-white-new.jpg"},
+  {"name":"Fratelli Master Selection Red","type":"red","price":"1000-1500","occasions":["hosting"],"body":"medium","fruit":"medium","oak":"low","sweetness":"low","aroma1":"Black pepper","aroma2":"cloves","flavour1":"liquirice","flavour2":"tobacco","variety":"Sangiovese, Cabernet Franc & Shiraz","bottleImg":"ms-red-new.jpg"},
+  {"name":"Fratelli Master Selection Rose","type":"rose","price":"1000-1500","occasions":["hosting"],"body":"low","fruit":"high","oak":"none","sweetness":"medium","aroma1":"rose petals","aroma2":"strawberry","flavour1":"apple","flavour2":"sea salt","variety":"Sangiovese","bottleImg":"ms-rose-new.jpg"},
+  {"name":"Fratelli Master Selection Late Harvest","type":"dessert","price":"1000-1500","occasions":["hosting"],"body":"high","fruit":"low","oak":"high","sweetness":"high","aroma1":"dry apricot","aroma2":"Orange zest","flavour1":"honey","flavour2":"almond","variety":"Late Harvest Blend","bottleImg":"ms-red-late-harvest-new.jpg"},
+  {"name":"Fratelli Chenin Blanc","type":"white","price":"500-1000","occasions":["brunch","everyday"],"body":"medium","fruit":"medium","oak":"none","sweetness":"low","aroma1":"Lime","aroma2":"Apple","flavour1":"almond","flavour2":"sea salt","variety":"Chenin Blanc","bottleImg":"chenin-blanc-new.jpg"},
+  {"name":"Fratelli Sangiovese Bianco","type":"white","price":"500-1000","occasions":["brunch","everyday"],"body":"low","fruit":"medium","oak":"none","sweetness":"low","aroma1":"Coconut","aroma2":"buganville","flavour1":"vanilla","flavour2":"sea salt","variety":"Sangiovese","bottleImg":"sangiovese-bianco-new.jpg"},
+  {"name":"Fratelli Chardonnay","type":"white","price":"500-1000","occasions":["brunch","date night","everyday"],"body":"low","fruit":"medium","oak":"none","sweetness":"low","aroma1":"Green Apple","aroma2":"Peach","flavour1":"floral notes","flavour2":"Gypsum","variety":"Chardonnay","bottleImg":"chardonnay-new.jpg"},
+  {"name":"Fratelli Sauvignon Blanc","type":"white","price":"500-1000","occasions":["brunch","everyday"],"body":"low","fruit":"high","oak":"none","sweetness":"low","aroma1":"Green Chilies","aroma2":"passion fruit","flavour1":"Sage","flavour2":"peach","variety":"Sauvignon Blanc","bottleImg":"sauvignon-blanc-new.jpg"},
+  {"name":"Fratelli Pinot Noir","type":"red","price":"1000-1500","occasions":["date night","everyday"],"body":"low","fruit":"high","oak":"low","sweetness":"low","aroma1":"Red Cherry","aroma2":"Raspberry","flavour1":"pomegranate","flavour2":"violet","variety":"Pinot Noir","bottleImg":"pinot-noir-new.jpg"},
+  {"name":"Fratelli Shiraz","type":"red","price":"500-1000","occasions":["everyday"],"body":"low","fruit":"high","oak":"low","sweetness":"low","aroma1":"Black pepper","aroma2":"white pepper","flavour1":"clove","flavour2":"stone","variety":"Shiraz","bottleImg":"shiraz-fruit-wine-new.jpg"},
+  {"name":"Fratelli Merlot","type":"red","price":"1000-1500","occasions":["date night","everyday"],"body":"medium","fruit":"high","oak":"medium","sweetness":"low","aroma1":"cherry","aroma2":"plum","flavour1":"baked spices","flavour2":"vanilla","variety":"Merlot","bottleImg":"merlot-new.jpg"},
+  {"name":"Fratelli Cabernet Franc Shiraz","type":"red","price":"500-1000","occasions":["everyday"],"body":"medium","fruit":"medium","oak":"none","sweetness":"low","aroma1":"bellpepper","aroma2":"tobacco leaf","flavour1":"black pepper","flavour2":"licorice","variety":"Cabernet Franc & Shiraz","bottleImg":"cabernet-franc-shiraz-new.jpg"},
+  {"name":"Fratelli Cabernet Sauvignon","type":"red","price":"500-1000","occasions":["everyday"],"body":"medium","fruit":"medium","oak":"low","sweetness":"low","aroma1":"black cherry","aroma2":"blackberry","flavour1":"bayleaf","flavour2":"licorice","variety":"Cabernet Sauvignon","bottleImg":"cabernet-sauvignon-new.jpg"},
+  {"name":"Fratelli Sangiovese","type":"red","price":"500-1000","occasions":["everyday"],"body":"low","fruit":"high","oak":"medium","sweetness":"low","aroma1":"sour cherry","aroma2":"red currant","flavour1":"violet","flavour2":"clove","variety":"Sangiovese","bottleImg":"sangiovese-new.jpg"},
+  {"name":"Fratelli Shiraz Rose","type":"rose","price":"500-1000","occasions":["brunch","everyday"],"body":"low","fruit":"high","oak":"none","sweetness":"medium","aroma1":"Strawberry","aroma2":"Blueberry","flavour1":"Soft all spice","flavour2":"rose","variety":"Shiraz","bottleImg":"shiraz-rose-new.jpg"}
 ];
+
+// Serve temperature + food pairing aren't published per-SKU on
+// fratelliwines.in (only Variety is) -- these are standard sommelier
+// convention by wine TYPE, not a per-wine scrape, and documented as
+// such here rather than presented as wine-specific facts.
+const SERVE_PAIR_BY_TYPE = {
+  red:       { serve: '16–18°C · decant 20–30 min', pair: 'Roasted meats · Rich pasta' },
+  white:     { serve: '8–10°C',                      pair: 'Seafood · Light salads' },
+  rose:      { serve: '10–12°C',                     pair: 'Grilled vegetables · Charcuterie' },
+  sparkling: { serve: '6–8°C',                        pair: 'Appetizers · Celebrations' },
+  dessert:   { serve: '8–10°C',                       pair: 'Cheese · Desserts' },
+};
 
 /* ═══════════════════════════════════════════════════════════════
    LABELS
@@ -1036,34 +1120,13 @@ const PRICE_LABELS = {
 const PRICE_ORDER = ['<500','500-1000','1000-1500','>1500'];
 
 /* ═══════════════════════════════════════════════════════════════
-   AROMA / FLAVOUR TAG LISTS
-   Pulled straight from the spreadsheet's Aroma1/Aroma2 and
-   Flavour1/Flavour2 columns (NOT the Body/Fruit/Oak/Sweetness L/M/H
-   scale — that's a separate, unscored "Style" question further down).
-   Both pickers are restricted to whichever wine type the guest chose
-   in step 1, so the guest never sees a note that can't actually show
-   up in their results; "Surprise Me" shows the full catalogue list.
+   SCORING — 45% category (wine type) · 35% price · 15% occasion ·
+   5% palate (Body/Fruit/Oak/Sweetness sliders). Food has no per-wine
+   data to check against at all, so it stays personalization-only
+   (results copy, lead context), zero weight, same as before. Pure,
+   DOM-free functions so they're easy to unit-test in isolation.
 ════════════════════════════════════════════════════════════════ */
-function getAvailableTags(field1, field2, wineType) {
-  const pool = (wineType && wineType !== 'any') ? WINES.filter(w => w.type === wineType) : WINES;
-  const seen = new Set();
-  pool.forEach(w => {
-    [w[field1], w[field2]].forEach(v => { if (v) seen.add(v.trim().toLowerCase()); });
-  });
-  return Array.from(seen).sort().map(v => ({ value: v, label: titleCase(v) }));
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   SCORING — 50% category (wine type) · 25% price · 25% flavour.
-   "Flavour" here is the spreadsheet's Flavour1/Flavour2 text columns
-   (e.g. "Apple", "Baked Spices") matched against the tags the guest
-   taps on the Flavour screen — NOT the Body/Fruit/Oak/Sweetness scale.
-   Occasion, Food, Aroma and Style (Body/Fruit/Oak/Sweetness) are all
-   asked for personalization only (results copy, lead context) and
-   carry NO weight in the score. Pure, DOM-free functions so they're
-   easy to unit-test in isolation.
-════════════════════════════════════════════════════════════════ */
-const WEIGHTS = { category: 0.50, price: 0.25, flavour: 0.25 };
+const WEIGHTS = { category: 0.45, price: 0.35, occasion: 0.15, palate: 0.05 };
 
 function categoryMatch(wineType, userType) {
   if (!userType || userType === 'any') return 1;
@@ -1078,33 +1141,54 @@ function priceMatch(winePrice, userPrice) {
   return Math.abs(wi - ui) === 1 ? 0.4 : 0;
 }
 
-// selectedTags: a Set of lowercased flavour strings the guest tapped
-// on the Flavour screen. Score = fraction of the wine's own flavour
-// notes (1 or 2 of them) that the guest picked. No picks = neutral
-// (0.5), same "skip isn't a penalty" rule as everywhere else in the quiz.
-function flavourTagMatch(wine, selectedTags) {
-  const wineTags = [wine.flavour1, wine.flavour2].filter(Boolean).map(t => t.toLowerCase());
-  if (!selectedTags || selectedTags.size === 0 || wineTags.length === 0) return 0.5;
-  const hits = wineTags.filter(t => selectedTags.has(t)).length;
-  return hits / wineTags.length;
+// wineOccasions: the wine's own `occasions` array. userOccasion: the
+// single value picked on the Occasion screen. Exact membership only
+// (no partial credit) — same all-or-nothing shape as categoryMatch,
+// and "any"/no pick is full credit for every wine, same "skip isn't a
+// penalty" rule as everywhere else in the quiz.
+function occasionMatch(wineOccasions, userOccasion) {
+  if (!userOccasion || userOccasion === 'any') return 1;
+  return wineOccasions.includes(userOccasion) ? 1 : 0;
+}
+
+// sliders: {body, fruit, oak, sweetness}, each 1(Low)–3(High) from the
+// Palate screen. Wine's own L/M/H (plus oak's extra "none") map onto
+// the same 1–3 scale, "none" folded into "low" since the slider only
+// has 3 stops. Score per dimension = 1 − |userValue − wineValue| / 2
+// (a 2-step gap, e.g. user picks Low against a High wine, scores 0),
+// averaged across all 4 — the same distance-based partial credit
+// priceMatch already uses for adjacent price bands, just per-dimension.
+const PALATE_LEVEL_VALUE = { none: 1, low: 1, medium: 2, high: 3 };
+const PALATE_DIMENSIONS = ['body', 'fruit', 'oak', 'sweetness'];
+function palateMatch(wine, sliders) {
+  if (!sliders) return 0.5;
+  const scores = PALATE_DIMENSIONS.map(dim => {
+    const wineVal = PALATE_LEVEL_VALUE[wine[dim]];
+    const userVal = sliders[dim];
+    if (!wineVal || !userVal) return 0.5;
+    return 1 - Math.abs(wineVal - userVal) / 2;
+  });
+  return scores.reduce((a, b) => a + b, 0) / scores.length;
 }
 
 function scoreWine(wine, prefs) {
   const cat = categoryMatch(wine.type, prefs.type);
   const price = priceMatch(wine.price, prefs.price);
-  const flavour = flavourTagMatch(wine, prefs.flavour);
+  const occasion = occasionMatch(wine.occasions, prefs.occasion);
+  const palate = palateMatch(wine, prefs.palate);
   // A hairline epsilon on the category term guarantees a category
   // match can never be outranked by an off-category wine, even in a
-  // theoretical tie on price+flavour — it's a genuine 50% weight,
+  // theoretical tie on everything else — it's a genuine 45% weight,
   // not just a soft nudge.
-  const total = cat * WEIGHTS.category + price * WEIGHTS.price + flavour * WEIGHTS.flavour + cat * 1e-6;
+  const total = cat * WEIGHTS.category + price * WEIGHTS.price + occasion * WEIGHTS.occasion + palate * WEIGHTS.palate + cat * 1e-6;
   return {
     total,
     pct: Math.round(Math.min(total, 1) * 100),
     breakdown: {
       category: Math.round(cat * 100),
       price: Math.round(price * 100),
-      flavour: Math.round(flavour * 100),
+      occasion: Math.round(occasion * 100),
+      palate: Math.round(palate * 100),
     }
   };
 }
@@ -1121,10 +1205,12 @@ function getRecommendations(prefs, topN) {
 ════════════════════════════════════════════════════════════════ */
 const state = {
   type: null, occasion: null, food: null,
-  aroma: new Set(), flavour: new Set(),           // multi-select tag pickers
-  price: null
+  palate: { body: 2, fruit: 2, oak: 2, sweetness: 2 },   // sliders default to Medium
+  price: null,
+  marketingConsent: false
 };
 let lastResults = [];
+let recIndex = 0; // which of the 3 recommendation cards the carousel is showing
 
 /* ═══════════════════════════════════════════════════════════════
    VISITOR LOCATION — "where people come from"
@@ -1239,22 +1325,21 @@ async function submitFratelliEnquiry({ name, email, mobile }) {
 /* ═══════════════════════════════════════════════════════════════
    SCREEN ENGINE
 ════════════════════════════════════════════════════════════════ */
-const QUIZ_SCREENS = ['s-wine', 's-occasion', 's-food', 's-aroma', 's-flavour', 's-price', 's-recs'];
+const QUIZ_SCREENS = ['s-wine', 's-occasion', 's-food', 's-palate', 's-price', 's-recs'];
 
 // The whole flow is one straight line (no branching paths — the
-// Aroma/Flavour "Skip" buttons and the Signup "Skip for now" link all
-// still land on the same next screen a real selection would), so a
-// flat "what's before me" map is enough for a back button; no
-// navigation-history stack needed. Landing has nothing before it, and
-// Thanks is a terminal confirmation screen, so both are left out on
-// purpose — the back button just stays hidden on those two.
+// Signup "Skip for now" link lands on the same next screen a real
+// submit would), so a flat "what's before me" map is enough for a
+// back button; no navigation-history stack needed. Landing has
+// nothing before it, and Thanks is a terminal confirmation screen, so
+// both are left out on purpose — the back button just stays hidden on
+// those two.
 const PREV_SCREEN = {
   's-wine': 's-landing',
   's-occasion': 's-wine',
   's-food': 's-occasion',
-  's-aroma': 's-food',
-  's-flavour': 's-aroma',
-  's-price': 's-flavour',
+  's-palate': 's-food',
+  's-price': 's-palate',
   's-recs': 's-price',
   's-signup': 's-recs',
 };
@@ -1376,15 +1461,6 @@ function typewrite(elId, text, speed, cb) {
 /* ═══════════════════════════════════════════════════════════════
    CHOICE WIRING
 ════════════════════════════════════════════════════════════════ */
-// Same "flash selected, then advance" feedback as wireChoiceGrid's
-// buttons, for the standalone Aroma/Flavour Skip buttons (which sit
-// below a dynamically-built tag grid rather than inside their own
-// wireChoiceGrid-managed one).
-function selectAndAdvance(btn, nextScreen) {
-  btn.classList.add('selected');
-  setTimeout(() => goTo(nextScreen), 480);
-}
-
 function wireChoiceGrid(containerId, key, nextScreen, revealDelay) {
   const grid = document.getElementById(containerId);
   qsa('.choice-btn', grid).forEach(btn => {
@@ -1398,40 +1474,30 @@ function wireChoiceGrid(containerId, key, nextScreen, revealDelay) {
 }
 wireChoiceGrid('wine-choices', 'type', 's-occasion');
 wireChoiceGrid('occasion-choices', 'occasion', 's-food');
-wireChoiceGrid('food-choices', 'food', 's-aroma');
+wireChoiceGrid('food-choices', 'food', 's-palate');
 
-/* ── Aroma / Flavour tag pickers (single-select, restricted to the
-   chosen wine type, skippable via the "Skip →" link below the grid).
-   selectedSet is still a Set under the hood (kept for
-   flavourTagMatch's overlap math) but the UI only ever lets it hold 0
-   or 1 value. Tapping a tag selects it and auto-advances to the next
-   screen immediately — same tap-to-commit behaviour as every other
-   single-select screen in the quiz (wine type/occasion/food/price) —
-   rather than requiring a separate Continue press. ── */
-function renderTagGrid(containerId, field1, field2, selectedSet, nextScreen) {
-  const container = document.getElementById(containerId);
-  const tags = getAvailableTags(field1, field2, state.type);
-  container.innerHTML = '';
-  if (tags.length === 0) {
-    container.innerHTML = '<span class="tag-empty">No notes on file for this selection — hit Skip.</span>';
-    return;
-  }
-  tags.forEach(tag => {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'tag-chip' + (selectedSet.has(tag.value) ? ' selected' : '');
-    chip.textContent = tag.label;
-    chip.dataset.val = tag.value;
-    chip.addEventListener('click', () => {
-      selectedSet.clear();
-      selectedSet.add(tag.value);
-      qsa('.tag-chip', container).forEach(c => c.classList.remove('selected'));
-      chip.classList.add('selected');
-      setTimeout(() => goTo(nextScreen), 480);
-    });
-    container.appendChild(chip);
-  });
+/* ── Palate sliders (Body/Fruit/Oak/Sweetness, 1-Low/2-Medium/3-High).
+   No auto-advance on this screen — with 4 independent sliders there's
+   no single "the" tap that means "done" the way a single-select grid
+   has, so the guest moves on via the Next arrow instead. Each slider
+   updates state.palate live and paints its own gold fill + Low/
+   Medium/High label as it's dragged. ── */
+const PALATE_VALUE_LABEL = { 1: 'Low', 2: 'Medium', 3: 'High' };
+function paintPalateSlider(slider) {
+  const val = parseInt(slider.value, 10);
+  const dim = slider.dataset.dim;
+  const pct = (val - 1) / 2 * 100; // min 1, max 3
+  slider.style.background =
+    `linear-gradient(to right, var(--gold) 0%, var(--gold) ${pct}%, var(--track-1) ${pct}%, var(--track-1) 100%)`;
+  document.getElementById(`palate-${dim}-value`).textContent = PALATE_VALUE_LABEL[val];
 }
+qsa('.palate-slider').forEach(slider => {
+  paintPalateSlider(slider); // initial paint at the default value
+  slider.addEventListener('input', () => {
+    state.palate[slider.dataset.dim] = parseInt(slider.value, 10);
+    paintPalateSlider(slider);
+  });
+});
 
 qsa('.price-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1450,107 +1516,71 @@ function titleCase(s) {
   return s.replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase());
 }
 
-// The results breakdown shows a row for every question asked, including
-// Occasion/Food/Aroma, which carry 0% actual weight in scoreWine() (see
-// WEIGHTS). Rather than an empty/near-zero bar giving that away, each
-// unscored row still renders a decent, wine-specific-looking fill —
-// a real match (where we have real data to check) skews it higher,
-// but it never drops low enough to look broken or suspicious. Seeded by
-// wine + dimension so a given wine's bars are stable across re-renders,
-// not a fresh random value every time.
-function seededFill(seed, min, max) {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  return Math.round(min + (h % 1000) / 1000 * (max - min));
-}
-function personalizationFill(wine, dimension, matched) {
-  // Kept close together and both on the high end — the real scored
-  // rows (Category/Price especially) often land at a clean 100%, and
-  // an unscored row sitting noticeably shorter than that would be
-  // exactly the "this one doesn't really count" tell we're avoiding.
-  return matched
-    ? seededFill(wine.name + dimension + 'y', 88, 98)
-    : seededFill(wine.name + dimension + 'n', 78, 90);
-}
-
+// One card at a time in a paginated carousel (see showRecCard()) —
+// each card is a wine's own bottle photo plus Variety/Serve/Pair,
+// rank 1 called out as "Perfect Match!", the other two as "Great
+// Match!" since they're genuinely a notch behind on score.
 function renderResults() {
   lastResults = getRecommendations(state, 3);
-  const list = document.getElementById('rec-list');
-  list.innerHTML = '';
+  const carousel = document.getElementById('rec-carousel');
+  carousel.innerHTML = '';
+  recIndex = 0;
 
-  // Occasion and food are personalization-only (unscored, see WEIGHTS) —
-  // they shape this subtitle, not the ranking.
-  const occLabel = state.occasion && state.occasion !== 'any' ? OCCASION_LABELS[state.occasion] : null;
-  const foodLabel = state.food && state.food !== 'any' ? FOOD_LABELS[state.food] : null;
-  const aromaLabels = Array.from(state.aroma).map(titleCase);
-  const bits = [];
-  if (occLabel) bits.push(`for your ${occLabel.toLowerCase()}`);
-  if (foodLabel) bits.push(`paired with ${foodLabel} cuisine`);
-  if (aromaLabels.length) bits.push(`with a nose of ${aromaLabels.slice(0, 2).join(' & ')}`);
-  let subtitle = bits.length
-    ? `Curated ${bits.join(', ')}`
-    : (visitor.city ? `Curated for wine lovers in ${visitor.city}` : 'Ranked by category, price and flavour match');
-  if (visitor.city && bits.length) subtitle += ` — cheers from the House of Fratelli, ${visitor.city}`;
-  document.getElementById('recs-sub').textContent = subtitle + '.';
-
-  const numerals = ['I', 'II', 'III'];
   lastResults.forEach((r, i) => {
     const w = r.wine;
-    const aromas = [w.aroma1, w.aroma2].filter(Boolean).map(titleCase).join(' · ');
-    const flavours = [w.flavour1, w.flavour2].filter(Boolean).map(titleCase).join(' · ');
-
-    // Real signal where we have it (Occasion/Aroma both have underlying
-    // wine data to check against); Food has no per-wine data at all, so
-    // it always falls back to the "no real signal" fill band.
-    const occMatched = !!(state.occasion && state.occasion !== 'any' && w.occasions.includes(state.occasion));
-    const aromaTag = Array.from(state.aroma)[0];
-    const wineAromas = [w.aroma1, w.aroma2].filter(Boolean).map(a => a.toLowerCase());
-    const aromaMatched = !!(aromaTag && wineAromas.includes(aromaTag));
-    const occFill = personalizationFill(w, 'occasion', occMatched);
-    const foodFill = personalizationFill(w, 'food', false);
-    const aromaFill = personalizationFill(w, 'aroma', aromaMatched);
+    const servePair = SERVE_PAIR_BY_TYPE[w.type] || {};
+    const displayName = w.name.replace(/^Fratelli\s+/, '');
 
     const card = document.createElement('div');
-    card.className = 'rec-card' + (i === 0 ? ' rank-1' : '');
+    card.className = 'rec-card-v2' + (i === 0 ? ' active' : '');
     card.innerHTML = `
-      <div class="rec-top">
-        <div>
-          <div class="rec-name">${w.name}</div>
-          <div class="rec-meta">${TYPE_LABELS[w.type]} · ${PRICE_LABELS[w.price]}</div>
-        </div>
-        <div class="rec-rank">${numerals[i]}</div>
+      <div class="rec-card-photo">
+        <img src="img/bottles/${w.bottleImg}" alt="${w.name} bottle" loading="lazy">
       </div>
-      <div class="rec-notes"><b>Aroma:</b> ${aromas || '—'}<br><b>Flavour:</b> ${flavours || '—'}</div>
-      <div class="score-bars">
-        <div class="score-bars-side">
-          <div class="score-bar-row"><span class="score-bar-label">Category</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.category}"></div></div></div>
-          <div class="score-bar-row"><span class="score-bar-label">Occasion</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${occFill}"></div></div></div>
-          <div class="score-bar-row"><span class="score-bar-label">Food</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${foodFill}"></div></div></div>
+      <div class="rec-card-info">
+        <div class="rec-card-eyebrow">${i === 0 ? 'Perfect Match!' : 'Great Match!'}</div>
+        <div class="rec-card-name">${displayName}</div>
+        <div class="rec-card-meta">${TYPE_LABELS[w.type]} · ${PRICE_LABELS[w.price]}</div>
+        <div class="rec-spec">
+          <div class="rec-spec-label">Variety</div>
+          <div class="rec-spec-value">${w.variety}</div>
         </div>
-        <div class="score-bars-side mirror">
-          <div class="score-bar-row"><span class="score-bar-label">Aroma</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${aromaFill}"></div></div></div>
-          <div class="score-bar-row"><span class="score-bar-label">Flavour</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.flavour}"></div></div></div>
-          <div class="score-bar-row"><span class="score-bar-label">Price</span><div class="score-bar-track"><div class="score-bar-fill" data-fill="${r.breakdown.price}"></div></div></div>
+        <div class="rec-spec">
+          <div class="rec-spec-label">Serve</div>
+          <div class="rec-spec-value">${servePair.serve || '—'}</div>
+        </div>
+        <div class="rec-spec">
+          <div class="rec-spec-label">Pair</div>
+          <div class="rec-spec-value">${servePair.pair || '—'}</div>
         </div>
       </div>
     `;
-    list.appendChild(card);
-
-    const delay = 180 + i * 160;
-    setTimeout(() => {
-      card.classList.add('show');
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        qsa('.score-bar-fill', card).forEach(fill => { fill.style.width = fill.dataset.fill + '%'; });
-      }));
-    }, delay);
+    carousel.appendChild(card);
   });
+
+  showRecCard(0);
 
   trackCustom('QuizCompleted', {
     top_wine: lastResults[0] ? lastResults[0].wine.name : null,
     top_match_pct: lastResults[0] ? lastResults[0].pct : null,
     wine_type: state.type, occasion: state.occasion, food: state.food, price: state.price,
-    aroma_tags: Array.from(state.aroma), flavour_tags: Array.from(state.flavour)
+    palate: state.palate
   });
+}
+
+// Clamped (not wrapping) pagination — prev/next disable themselves at
+// the ends rather than looping back around, matching the reference
+// design's plain arrow controls.
+function showRecCard(index) {
+  const cards = qsa('.rec-card-v2', document.getElementById('rec-carousel'));
+  const total = cards.length;
+  if (!total) return;
+  recIndex = Math.max(0, Math.min(index, total - 1));
+  cards.forEach((card, i) => card.classList.toggle('active', i === recIndex));
+  document.getElementById('rec-pag-label').textContent =
+    `Recommendation ${String(recIndex + 1).padStart(2, '0')}/${String(total).padStart(2, '0')}`;
+  document.getElementById('rec-prev').disabled = recIndex === 0;
+  document.getElementById('rec-next').disabled = recIndex === total - 1;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1584,7 +1614,8 @@ document.getElementById('signup-form').addEventListener('submit', function (e) {
     name: name || null,
     email,
     mobile: mobile || null,
-    quiz: Object.assign({}, state, { aroma: Array.from(state.aroma), flavour: Array.from(state.flavour) }),
+    marketingConsent: state.marketingConsent,
+    quiz: Object.assign({}, state, { palate: Object.assign({}, state.palate) }),
     recommendations: lastResults.map(r => ({ name: r.wine.name, matchPct: r.pct })),
     visitor,
     referrer: document.referrer || null,
@@ -1628,13 +1659,8 @@ const ON_ENTER = {
       document.getElementById('food-choices').classList.add('visible');
     });
   },
-  's-aroma': function () {
-    renderTagGrid('aroma-tags', 'aroma1', 'aroma2', state.aroma, 's-flavour');
-    typewrite('tw-aroma', 'What aromas draw you the most?', 26);
-  },
-  's-flavour': function () {
-    renderTagGrid('flavour-tags', 'flavour1', 'flavour2', state.flavour, 's-price');
-    typewrite('tw-flavour', "Now, what flavours are you craving for the most?", 26);
+  's-palate': function () {
+    typewrite('tw-palate', "Let's understand your palate", 26);
   },
   's-price': function () {
     typewrite('tw-price', "What's your budget?", 26, () => {
@@ -1653,15 +1679,20 @@ function startQuiz() { goTo('s-wine'); }
 
 function restartQuiz() {
   Object.keys(state).forEach(k => state[k] = null);
-  state.aroma = new Set();
-  state.flavour = new Set();
-  qsa('.choice-btn.selected, .price-btn.selected, .tag-chip.selected').forEach(el => el.classList.remove('selected'));
-  // #aroma-continue/#flavour-continue's Skip buttons are permanently
-  // visible (no fade-in triggered by ON_ENTER, unlike the other
-  // choice grids), so they're excluded here rather than losing their
-  // 'visible' class with nothing left to ever restore it.
-  qsa('.choice-grid.visible:not(#aroma-continue):not(#flavour-continue), .price-grid.visible').forEach(el => el.classList.remove('visible'));
-  document.getElementById('signup-form').reset();
+  state.palate = { body: 2, fruit: 2, oak: 2, sweetness: 2 };
+  state.marketingConsent = false;
+  qsa('.choice-btn.selected, .price-btn.selected').forEach(el => el.classList.remove('selected'));
+  qsa('.choice-grid.visible, .price-grid.visible').forEach(el => el.classList.remove('visible'));
+  qsa('.palate-slider').forEach(slider => { slider.value = 2; paintPalateSlider(slider); });
+  const consent = document.getElementById('marketing-consent');
+  if (consent) consent.checked = false;
+  // #signup-form doesn't exist anymore after a successful submit (its
+  // parent #signup-content's innerHTML gets replaced with a "Welcome"
+  // message above) -- guard so a restart from the Thanks screen after
+  // a successful signup doesn't throw here and silently abort before
+  // ever reaching goTo('s-wine') below.
+  const signupForm = document.getElementById('signup-form');
+  if (signupForm) signupForm.reset();
   goTo('s-wine');
 }
 
